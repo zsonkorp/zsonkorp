@@ -3,6 +3,9 @@ use axum::{
     Router,
 };
 
+mod card;
+mod deck;
+
 #[tokio::main]
 async fn main() {
     // build our application with a single route
