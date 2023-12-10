@@ -57,11 +57,11 @@ mod tests {
         let deck_count = 6;
         let deck = Deck::new_multi(deck_count);
 
-        assert_eq!(deck.cards.len(), 52 * deck_count);
+        assert_eq!(deck.cards.len(), (52 * deck_count) as usize);
 
         for i in 0..deck_count {
             for j in 0..52 {
-                assert_eq!(deck.cards[i * 52 + j].get_val() as usize, j);
+                assert_eq!(deck.cards[(i * 52 + j) as usize].get_val(), j as u8);
             }
         }
     }
