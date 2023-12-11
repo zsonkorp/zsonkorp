@@ -43,5 +43,5 @@ jobs:
         run: |
           cargo +nightly tarpaulin --verbose --all-features --workspace --out Lcov
       - name: Push coverage
-        run: coverallsapp/github-action@v2.2.3
+        uses: coverallsapp/github-action@v2.2.3
             
