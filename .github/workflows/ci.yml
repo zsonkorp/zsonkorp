@@ -32,7 +32,7 @@ jobs:
   
   coverage:
     needs: build-lint-test
-    runs-on: ubunto-latest
+    runs-on: ubuntu-latest
     container:
       image: xd009642/tarpaulin:develop-nightly
       options: --security-opt seccomp=unconfined
