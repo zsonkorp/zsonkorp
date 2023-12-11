@@ -1,3 +1,6 @@
+use thiserror::Error;
+use crate::card;
+
 pub(crate) const RANK_COUNT: u8 = 13;
 pub(crate) const SUIT_COUNT: u8 = 4;
 
@@ -14,14 +17,23 @@ pub enum Suit {
     Diamonds
 }
 
-impl From<u8> for Suit {
-    fn from(value: u8) -> Self {
+#[derive(Error, Debug, PartialEq)]
+pub enum Error {
+    #[error("Invalid suit ordinal value: {0}")]
+    SuitOrdinal(u8),
+    #[error("Invalid rank value: {0}")]
+    InvalidRank(u8)
+}
+
+impl TryFrom<u8> for Suit {
+    type Error = card::Error;
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
-            0 => Suit::Hearts,
-            1 => Suit::Spades,
-            2 => Suit::Clubs,
-            3 => Suit::Diamonds,
-            _ => panic!("Invalid suit")
+            0 => Ok(Suit::Hearts),
+            1 => Ok(Suit::Spades),
+            2 => Ok(Suit::Clubs),
+            3 => Ok(Suit::Diamonds),
+            _ => Err(Error::SuitOrdinal(value))
         }
     }
 }
@@ -38,15 +50,15 @@ impl From<Suit> for u8 {
 }
 
 impl Card {
-    pub fn new(rank: u8, suit: Suit) -> Self {
+    pub fn new(rank: u8, suit: Suit) -> Result<Card, card::Error> {
 
         if rank == 0 || rank > RANK_COUNT {
-            panic!()
+            return Err(Error::InvalidRank(rank));
         }
 
-        Card {
+        Ok(Card {
             val: u8::from(suit) * RANK_COUNT + (rank - 1)
-        }
+        })
     }
 
     pub fn get_rank(&self) -> u8 {
@@ -54,7 +66,7 @@ impl Card {
     }
 
     pub fn get_suit(&self) -> Suit {
-        Suit::from(self.val / RANK_COUNT)
+        Suit::try_from(self.val / RANK_COUNT).unwrap()
     }
 }
 
@@ -77,53 +89,56 @@ mod tests {
     }
 
     #[test]
-    fn ord_to_suit() {
-        assert_eq!(Suit::from(0), Suit::Hearts);
-        assert_eq!(Suit::from(1), Suit::Spades);
-        assert_eq!(Suit::from(2), Suit::Clubs);
-        assert_eq!(Suit::from(3), Suit::Diamonds);
+    fn ord_to_suit() -> Result<(), card::Error> {
+        assert_eq!(Suit::try_from(0)?, Suit::Hearts);
+        assert_eq!(Suit::try_from(1)?, Suit::Spades);
+        assert_eq!(Suit::try_from(2)?, Suit::Clubs);
+        assert_eq!(Suit::try_from(3)?, Suit::Diamonds);
+        Ok(())
     }
 
     #[test]
     #[should_panic]
     fn invalid_ord_to_suit_edge() {
-        let _ = Suit::from(4);
+        Suit::try_from(4).unwrap();
     }
 
     #[test]
-    fn create_card_suit() {
-        let card = Card::new(1, Suit::Hearts);
+    fn create_card_suit() -> Result<(), card::Error>{
+        let card = Card::new(1, Suit::Hearts)?;
         assert_eq!(card.val, 0);
 
-        let card = Card::new(1, Suit::Spades);
+        let card = Card::new(1, Suit::Spades)?;
         assert_eq!(card.val, RANK_COUNT);
 
-        let card = Card::new(1, Suit::Clubs);
+        let card = Card::new(1, Suit::Clubs)?;
         assert_eq!(card.val, RANK_COUNT * 2);
 
-        let card = Card::new(1, Suit::Diamonds);
+        let card = Card::new(1, Suit::Diamonds)?;
         assert_eq!(card.val, RANK_COUNT * 3);
+        Ok(())
     }
 
     #[test]
-    fn create_card_rank() {
-        let card = Card::new(1, Suit::Hearts);
+    fn create_card_rank() -> Result<(), card::Error>{
+        let card = Card::new(1, Suit::Hearts)?;
         assert_eq!(card.val, 0);
 
-        let card = Card::new(2, Suit::Hearts);
+        let card = Card::new(2, Suit::Hearts)?;
         assert_eq!(card.val, 1);
 
-        let card = Card::new(6, Suit::Hearts);
+        let card = Card::new(6, Suit::Hearts)?;
         assert_eq!(card.val, 5);
 
-        let card = Card::new(7, Suit::Hearts);
+        let card = Card::new(7, Suit::Hearts)?;
         assert_eq!(card.val, 6);
 
-        let card = Card::new(13, Suit::Hearts);
+        let card = Card::new(13, Suit::Hearts)?;
         assert_eq!(card.val, 12);
 
-        let card = Card::new(12, Suit::Hearts);
+        let card = Card::new(12, Suit::Hearts)?;
         assert_eq!(card.val, 11);
+        Ok(())
     }
 
     // #[test]
@@ -133,8 +148,26 @@ mod tests {
 
     #[test]
     #[should_panic]
-    fn create_card_invalid_rank() {
-        todo!()
+    fn create_card_invalid_rank_0() {
+        Card::new(0, Suit::Hearts).unwrap();
+    }
+
+    #[test]
+    fn create_card_invalid_rank_above_count() {
+        assert_eq!(
+            Card::new(RANK_COUNT + 1, Suit::Hearts).unwrap_err(),
+            Error::InvalidRank(RANK_COUNT + 1)
+        );
+
+        assert_eq!(
+            Card::new(RANK_COUNT + 2, Suit::Hearts).unwrap_err(),
+            Error::InvalidRank(RANK_COUNT + 2)
+        );
+
+        assert_eq!(
+            Card::new(RANK_COUNT + 100, Suit::Hearts).unwrap_err(),
+            Error::InvalidRank(RANK_COUNT + 100)
+        );
     }
 
     #[test]

@@ -22,7 +22,7 @@ impl Deck {
                 for _ in 0..count {
                     for suit_ord in 0..SUIT_COUNT {
                         for rank in 1..(RANK_COUNT + 1) {
-                            cards.push(Card::new(rank, suit_ord.into()));
+                            cards.push(Card::new(rank, suit_ord.try_into().unwrap()).unwrap());
                         }
                     }
                 }
@@ -44,9 +44,9 @@ impl Deck {
             panic!()
         }
 
-        return Deck {
+        Deck {
             cards: self.cards.split_off(index+ 1)
-        };
+        }
     }
 
     pub fn shuffle(&mut self) {
@@ -94,17 +94,17 @@ mod tests {
     fn split_all_but_one() {
         let mut orig_deck = Deck {
             cards: vec![
-                Card::new(1, Hearts),
-                Card::new(2, Hearts),
-                Card::new(3, Hearts),
-                Card::new(4, Hearts),
+                Card::new(1, Hearts).unwrap(),
+                Card::new(2, Hearts).unwrap(),
+                Card::new(3, Hearts).unwrap(),
+                Card::new(4, Hearts).unwrap(),
             ]
         };
 
         let new_deck = orig_deck.split(0);
 
         assert_eq!(orig_deck.cards.len(), 1);
-        assert_eq!(orig_deck.cards[0], Card::new(1, Hearts));
+        assert_eq!(orig_deck.cards[0], Card::new(1, Hearts).unwrap());
 
         assert_eq!(new_deck.cards.len(), 3);
         for (i, card) in new_deck.cards.iter().enumerate() {
@@ -117,10 +117,10 @@ mod tests {
     fn split_one_end() {
         let mut orig_deck = Deck {
             cards: vec![
-                Card::new(1, Hearts),
-                Card::new(2, Hearts),
-                Card::new(3, Hearts),
-                Card::new(4, Hearts),
+                Card::new(1, Hearts).unwrap(),
+                Card::new(2, Hearts).unwrap(),
+                Card::new(3, Hearts).unwrap(),
+                Card::new(4, Hearts).unwrap(),
             ]
         };
 
@@ -134,7 +134,7 @@ mod tests {
         }
 
         assert_eq!(new_deck.cards.len(), 1);
-        assert_eq!(new_deck.cards[0], Card::new(4, Hearts));
+        assert_eq!(new_deck.cards[0], Card::new(4, Hearts).unwrap());
 
     }
 
@@ -142,22 +142,22 @@ mod tests {
     fn split_middle() {
         let mut orig_deck = Deck {
             cards: vec![
-                Card::new(1, Hearts),
-                Card::new(2, Hearts),
-                Card::new(3, Hearts),
-                Card::new(4, Hearts),
+                Card::new(1, Hearts).unwrap(),
+                Card::new(2, Hearts).unwrap(),
+                Card::new(3, Hearts).unwrap(),
+                Card::new(4, Hearts).unwrap(),
             ]
         };
 
         let new_deck = orig_deck.split(1);
 
         assert_eq!(orig_deck.cards.len(), 2);
-        assert_eq!(orig_deck.cards[0], Card::new(1, Hearts));
-        assert_eq!(orig_deck.cards[1], Card::new(2, Hearts));
+        assert_eq!(orig_deck.cards[0], Card::new(1, Hearts).unwrap());
+        assert_eq!(orig_deck.cards[1], Card::new(2, Hearts).unwrap());
 
         assert_eq!(new_deck.cards.len(), 2);
-        assert_eq!(new_deck.cards[0], Card::new(3, Hearts));
-        assert_eq!(new_deck.cards[1], Card::new(4, Hearts));
+        assert_eq!(new_deck.cards[0], Card::new(3, Hearts).unwrap());
+        assert_eq!(new_deck.cards[1], Card::new(4, Hearts).unwrap());
     }
 
     #[test]
