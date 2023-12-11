@@ -39,6 +39,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Generate and push coverage
+      - name: Generate coverage
         run: |
-          cargo +nightly tarpaulin --verbose --all-features --workspace --coveralls "${{ secrets.COVERALLS_REPO_TOKEN }}"
+          cargo +nightly tarpaulin --verbose --all-features --workspace --out Lcov
+      - name: Push coverage
+        run: coverallsapp/github-action@v2.2.3
+            
