@@ -10,13 +10,35 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  build-lint-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+          - beta
+          - nightly
 
     steps:
     - uses: actions/checkout@v3
-    - name: Build
+    - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+    - run: rustup component add clippy
+    - name: build
       run: cargo build --verbose
-    - name: Run tests
+    - name: lint
+      run: cargo clippy --all-targets --all-features
+    - name: tests
       run: cargo test --verbose
+  
+  coverage:
+    needs: build-lint-test
+    runs-on: ubunto-latest
+    container:
+      image: xd009642/tarpaulin:develop-nightly
+      options: --security-opt seccomp=unconfined
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Generate and push coverage
+        run: |
+          cargo +nightly tarpaulin --verbose --all-features --workspace --coveralls "${{ secrets.COVERALLS_REPO_TOKEN }}"
