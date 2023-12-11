@@ -13,7 +13,7 @@ impl Deck {
 
     pub fn new_multi(count: u32) -> Self {
         match count {
-            0 => panic!(),   //very nice
+            0 => Deck{ cards: Vec::new() },
             _ => {
                 let mut cards = Vec::with_capacity(
                     (count * RANK_COUNT as u32 * SUIT_COUNT as u32) as usize
@@ -27,9 +27,26 @@ impl Deck {
                     }
                 }
 
-                return Deck { cards };
+                Deck { cards }
             }
         }
+    }
+
+    //TODO: implement split interval: startIdx & endIdx
+    pub fn split(&mut self, index: usize) -> Self {
+        if self.cards.len() <= 1 {
+            //TODO: error here
+            panic!()
+        }
+
+        if index >= self.cards.len() - 1 {
+            //TODO: error here
+            panic!()
+        }
+
+        return Deck {
+            cards: self.cards.split_off(index+ 1)
+        };
     }
 
     pub fn shuffle(&mut self) {
@@ -39,6 +56,7 @@ impl Deck {
 
 #[cfg(test)]
 mod tests {
+    use crate::card::Suit::Hearts;
     use super::*;
 
     #[test]
@@ -67,8 +85,84 @@ mod tests {
     }
 
     #[test]
+    fn create_empty_deck() {
+        let deck = Deck::new_multi(0);
+        assert!(deck.cards.is_empty());
+    }
+
+    #[test]
+    fn split_all_but_one() {
+        let mut orig_deck = Deck {
+            cards: vec![
+                Card::new(1, Hearts),
+                Card::new(2, Hearts),
+                Card::new(3, Hearts),
+                Card::new(4, Hearts),
+            ]
+        };
+
+        let new_deck = orig_deck.split(0);
+
+        assert_eq!(orig_deck.cards.len(), 1);
+        assert_eq!(orig_deck.cards[0], Card::new(1, Hearts));
+
+        assert_eq!(new_deck.cards.len(), 3);
+        for (i, card) in new_deck.cards.iter().enumerate() {
+            assert_eq!(card.get_rank() as usize, i + 2);
+            assert_eq!(card.get_suit(), Hearts);
+        }
+    }
+
+    #[test]
+    fn split_one_end() {
+        let mut orig_deck = Deck {
+            cards: vec![
+                Card::new(1, Hearts),
+                Card::new(2, Hearts),
+                Card::new(3, Hearts),
+                Card::new(4, Hearts),
+            ]
+        };
+
+        let new_deck = orig_deck.split(2);
+
+        assert_eq!(orig_deck.cards.len(), 3);
+
+        for (i, card) in orig_deck.cards.iter().enumerate() {
+            assert_eq!(card.get_rank() as usize, i + 1);
+            assert_eq!(card.get_suit(), Hearts);
+        }
+
+        assert_eq!(new_deck.cards.len(), 1);
+        assert_eq!(new_deck.cards[0], Card::new(4, Hearts));
+
+    }
+
+    #[test]
+    fn split_middle() {
+        let mut orig_deck = Deck {
+            cards: vec![
+                Card::new(1, Hearts),
+                Card::new(2, Hearts),
+                Card::new(3, Hearts),
+                Card::new(4, Hearts),
+            ]
+        };
+
+        let new_deck = orig_deck.split(1);
+
+        assert_eq!(orig_deck.cards.len(), 2);
+        assert_eq!(orig_deck.cards[0], Card::new(1, Hearts));
+        assert_eq!(orig_deck.cards[1], Card::new(2, Hearts));
+
+        assert_eq!(new_deck.cards.len(), 2);
+        assert_eq!(new_deck.cards[0], Card::new(3, Hearts));
+        assert_eq!(new_deck.cards[1], Card::new(4, Hearts));
+    }
+
+    #[test]
     #[should_panic]
-    fn create_invalid_multi_deck() {
+    fn invalid_split() {
         todo!()
     }
 }
