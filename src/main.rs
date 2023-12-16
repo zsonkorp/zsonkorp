@@ -5,6 +5,11 @@ use axum::{
 
 mod card;
 mod deck;
+mod game;
+mod config;
+mod state;
+mod player;
+mod result;
 
 #[tokio::main]
 async fn main() {

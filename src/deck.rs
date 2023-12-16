@@ -2,18 +2,29 @@ use crate::card::{Card, RANK_COUNT, SUIT_COUNT};
 use rand::thread_rng;
 use rand::seq::SliceRandom;
 
-struct Deck {
-    cards: Vec<Card>
+pub(crate) struct Deck {
+    cards: Vec<Card>,
+    next_idx: usize
+}
+
+impl Default for Deck {
+    fn default() -> Self {
+        Deck::new_multi(1)
+    }
 }
 
 impl Deck {
     pub fn new() -> Self {
-        Deck::new_multi(1)
+        Deck::new_multi(0)
     }
 
     pub fn new_multi(count: u32) -> Self {
         match count {
-            0 => Deck{ cards: Vec::new() },
+            0 => Deck{
+                cards: Vec::new(),
+                next_idx: 0
+            },
+
             _ => {
                 let mut cards = Vec::with_capacity(
                     (count * RANK_COUNT as u32 * SUIT_COUNT as u32) as usize
@@ -27,7 +38,7 @@ impl Deck {
                     }
                 }
 
-                Deck { cards }
+                Deck { cards, next_idx: 0 }
             }
         }
     }
@@ -45,12 +56,35 @@ impl Deck {
         }
 
         Deck {
-            cards: self.cards.split_off(index+ 1)
+            cards: self.cards.split_off(index+ 1),
+            next_idx: 0
         }
     }
 
     pub fn shuffle(&mut self) {
         self.cards.shuffle(&mut thread_rng());
+
+        //shuffling serves to reset the deck
+        self.next_idx = 0;
+    }
+
+    pub fn deal(&mut self) -> Option<&Card> {
+        if self.next_idx == self.cards.len() {
+            return None
+        }
+
+        let card = &self.cards[self.next_idx];
+        self.next_idx += 1;
+
+        Some(card)
+    }
+
+    pub fn deal_multi(&mut self, count: usize) -> Option<&[Card]> {
+        if self.next_idx == self.cards.len() || self.next_idx + count >= self.cards.len() {
+            return None
+        }
+
+        Some(&self.cards[self.next_idx..self.next_idx + count])
     }
 }
 
@@ -60,8 +94,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn create_single_deck() {
+    fn create_empty_deck() {
         let deck = Deck::new();
+        assert!(deck.cards.is_empty())
+    }
+
+    #[test]
+    fn create_default_deck() {
+        let deck = Deck::default();
+
+        assert_eq!(deck.cards.len(), 52);
+
+        for i in 0..52 {
+            assert_eq!(deck.cards[i].get_val() as usize, i);
+        }
+    }
+
+    #[test]
+    fn create_single_deck() {
+        let deck = Deck::new_multi(1);
 
         assert_eq!(deck.cards.len(), 52);
 
@@ -85,12 +136,6 @@ mod tests {
     }
 
     #[test]
-    fn create_empty_deck() {
-        let deck = Deck::new_multi(0);
-        assert!(deck.cards.is_empty());
-    }
-
-    #[test]
     fn split_all_but_one() {
         let mut orig_deck = Deck {
             cards: vec![
@@ -98,7 +143,8 @@ mod tests {
                 Card::new(2, Hearts).unwrap(),
                 Card::new(3, Hearts).unwrap(),
                 Card::new(4, Hearts).unwrap(),
-            ]
+            ],
+            next_idx: 0
         };
 
         let new_deck = orig_deck.split(0);
@@ -121,7 +167,8 @@ mod tests {
                 Card::new(2, Hearts).unwrap(),
                 Card::new(3, Hearts).unwrap(),
                 Card::new(4, Hearts).unwrap(),
-            ]
+            ],
+            next_idx: 0
         };
 
         let new_deck = orig_deck.split(2);
@@ -146,7 +193,8 @@ mod tests {
                 Card::new(2, Hearts).unwrap(),
                 Card::new(3, Hearts).unwrap(),
                 Card::new(4, Hearts).unwrap(),
-            ]
+            ],
+            next_idx: 0
         };
 
         let new_deck = orig_deck.split(1);
