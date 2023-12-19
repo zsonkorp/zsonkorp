@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use crate::player::Player;
 
-enum Wager {
+pub enum Wager {
     FullDeck,
     AtFlop(u8),
-    FlopRange(u8)
+    FlopRange(u8, u8)
 }
 
 pub(crate) struct Fts {
     players: Vec<Player>,
-    wagers: HashMap<Player, Vec<Wager>>
+    pub wagers: HashMap<Player, Vec<Wager>>
 }

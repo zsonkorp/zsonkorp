@@ -5,7 +5,8 @@ use crate::state::State;
 mod fts;
 #[derive(Error, Debug)]
 enum Error {
-
+    #[error("Generic game error")]
+    Generic
 }
 
 trait Game {

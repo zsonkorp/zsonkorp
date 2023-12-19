@@ -1,3 +1,4 @@
+use std::fs::canonicalize;
 use crate::card::{Card, RANK_COUNT, SUIT_COUNT};
 use rand::thread_rng;
 use rand::seq::SliceRandom;
@@ -85,6 +86,10 @@ impl Deck {
         }
 
         Some(&self.cards[self.next_idx..self.next_idx + count])
+    }
+
+    pub fn len(&self) -> usize {
+        self.cards.len()
     }
 }
 
