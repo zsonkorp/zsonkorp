@@ -12,6 +12,10 @@ impl Hash for Player {
 
 impl PartialEq<Self> for Player {
     fn eq(&self, other: &Self) -> bool {
-        self.id.eq(other)
+        self.id.eq(&other.id)
     }
+}
+
+impl Eq for Player {
+
 }

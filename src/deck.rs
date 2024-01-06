@@ -85,7 +85,9 @@ impl Deck {
             return None
         }
 
-        Some(&self.cards[self.next_idx..self.next_idx + count])
+        let ret = Some(&self.cards[self.next_idx..self.next_idx + count]);
+        self.next_idx += count;
+        ret
     }
 
     pub fn len(&self) -> usize {

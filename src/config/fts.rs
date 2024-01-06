@@ -14,11 +14,11 @@ pub enum WagerType {
 
 pub(crate) struct Fts {
     pub wagers: HashMap<Player, Vec<Wager>>,
-    pub house_id: Option<String>
+    pub house_id: String
 }
 
 impl Fts {
-    pub fn new(wagers_map: HashMap<Player, Vec<Wager>>, house_id: Option<String>) -> Self {
+    pub fn new(wagers_map: HashMap<Player, Vec<Wager>>, house_id: String) -> Self {
         Fts {
             wagers: wagers_map,
             house_id
@@ -26,7 +26,7 @@ impl Fts {
     }
 
     pub fn set_house(&mut self, house_id: String) {
-        self.house_id = Some(house_id);
+        self.house_id = house_id;
     }
 
     pub fn add_player(&mut self) -> Result<()> {
@@ -39,11 +39,7 @@ impl Fts {
 
     pub fn validate(&self) -> Result<()> {
         if self.wagers.is_empty() {
-            Err(anyhow!("No wagers"))
-        }
-
-        if self.house_id == None {
-            Err(anyhow!("No house"))
+            return Err(anyhow!("No wagers"));
         }
 
         Ok(())
