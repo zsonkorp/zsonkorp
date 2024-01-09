@@ -5,8 +5,9 @@ use crate::deck::Deck;
 use crate::state::State;
 use crate::config::fts::{Fts as FtsConfig, WagerType};
 use anyhow::{anyhow, Result};
+use crate::game::{Game, GameType};
 
-struct Fts {
+pub(crate) struct Fts {
     deck: Deck,
     config: FtsConfig,
     state: State,
@@ -156,6 +157,12 @@ impl Fts {
         } else {
             Some(map)
         }
+    }
+}
+
+impl Game for Fts {
+    fn my_type(&self) -> GameType {
+        GameType::Fts
     }
 }
 

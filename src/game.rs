@@ -9,12 +9,9 @@ enum Error {
     Generic
 }
 
-trait Game {
-    type ConfigType;
-    fn setup(&mut self, config: Self::ConfigType) -> Result<(), Error>;
-    fn ready(&self) -> bool;
-    fn start(&mut self) -> Result<State, Error>;
-
-    fn advance(&mut self) -> Result<State, Error>;
-    fn get_payout(&self) -> Result<Payout, Error>;
+enum GameType {
+    Fts
+}
+pub trait Game {
+    fn my_type(&self) -> GameType;
 }
