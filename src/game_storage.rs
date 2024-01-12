@@ -19,7 +19,7 @@ impl GameStorage {
         key
     }
 
-    pub fn get_game(&mut self, id: &str) -> Option<&dyn Game> {
+    pub fn get_game(&mut self, id: &str) -> Option<&mut dyn Game> {
         let mut game = self.map.get_mut(id)?;
         Some(game.as_mut())
     }

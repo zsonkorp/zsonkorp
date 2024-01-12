@@ -90,6 +90,10 @@ impl Deck {
         ret
     }
 
+    pub fn get_dealt_cards(&self) -> &[Card] {
+        &self.cards[0..self.next_idx]
+    }
+
     pub fn len(&self) -> usize {
         self.cards.len()
     }

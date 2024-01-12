@@ -70,39 +70,6 @@ impl Fts {
         Ok(())
     }
 
-    pub fn start(&mut self) -> Result<()> {
-        self.ready()?;
-
-        self.state = State::Started;
-        self.deck.shuffle();
-
-        match self.deck.deal_multi((self.max_flop_count * 3).into()) {
-            None => return Err(anyhow!("Could not deal the required amount of cards")),
-            Some(cards) => {
-                let result = cards
-                    .chunks(3)
-                    .enumerate()
-                    .filter_map(|(i, chunk)| {
-                        if chunk[0].get_suit() == chunk[1].get_suit() && chunk[1].get_suit() == chunk[2].get_suit() {
-                            Some(i)
-                        } else {
-                            None
-                        }
-                    })
-                    .next();
-
-                if let Some(flopped_at) = result {
-                    self.flopped_at = Some(flopped_at as u8);
-                }
-            }
-        }
-
-        // fts does not need any internal state transitions yet, go straight to the end
-        self.state = State::Ended;
-
-        Ok(())
-    }
-
     pub fn get_payout(&self) -> Option<HashMap<String, i32>> {
         let mut map: HashMap<String, i32> = HashMap::new();
 
@@ -164,6 +131,49 @@ impl Game for Fts {
     fn my_type(&self) -> GameType {
         GameType::Fts
     }
+
+    fn start(&mut self) -> Result<()> {
+        self.ready()?;
+
+        self.state = State::Started;
+        self.deck.shuffle();
+
+        match self.deck.deal_multi((self.max_flop_count * 3).into()) {
+            None => return Err(anyhow!("Could not deal the required amount of cards")),
+            Some(cards) => {
+                let result = cards
+                    .chunks(3)
+                    .enumerate()
+                    .filter_map(|(i, chunk)| {
+                        if chunk[0].get_suit() == chunk[1].get_suit() && chunk[1].get_suit() == chunk[2].get_suit() {
+                            Some(i)
+                        } else {
+                            None
+                        }
+                    })
+                    .next();
+
+                if let Some(flopped_at) = result {
+                    self.flopped_at = Some(flopped_at as u8);
+                }
+            }
+        }
+
+        // fts does not need any internal state transitions yet, go straight to the end
+        self.state = State::Ended;
+
+        Ok(())
+    }
+
+    fn get_result(&self) -> String {
+        format!("Flopped at: {}\nCards: {:?}",
+                match &self.flopped_at {
+                    Some(f) => f,
+                    None => &0
+                },
+                self.deck.get_dealt_cards()
+        )
+    }
 }
 
 #[cfg(test)]
@@ -193,6 +203,8 @@ mod tests {
         let payout = game.get_payout().unwrap();
 
         println!("Payout: {:?}", payout);
+
+        println!("Result: {}", game.get_result());
         Ok(())
     }
 }
