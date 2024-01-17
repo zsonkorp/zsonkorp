@@ -816,6 +816,7 @@ dependencies = [
  "anyhow",
  "axum",
  "rand",
+ "serde",
  "thiserror",
  "tokio",
  "uuid",

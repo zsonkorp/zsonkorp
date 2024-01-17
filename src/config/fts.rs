@@ -1,17 +1,22 @@
 use std::collections::HashMap;
 use crate::player::Player;
 use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize)]
 pub struct Wager {
     pub wager_type: WagerType,
     pub amount: i32
 }
+
+#[derive(Deserialize)]
 pub enum WagerType {
     FullDeck,
     AtFlop(u8),
     FlopRange(u8, u8)
 }
 
+#[derive(Deserialize)]
 pub(crate) struct Fts {
     pub wagers: HashMap<Player, Vec<Wager>>,
     pub house_id: String

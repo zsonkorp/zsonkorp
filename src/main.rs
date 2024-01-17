@@ -1,10 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use axum::{
-    routing::get,
-    routing::post,
-    Router,
-};
+use axum::{routing::get, routing::post, Router, Json};
 use axum::extract::{Path, State};
 use crate::config::fts::{Fts, Wager};
 use crate::config::fts::WagerType::FullDeck;
@@ -36,15 +32,16 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn create_game(State(state): State<Arc<Mutex<GameStorage>>>) -> String {
-    let player = Player{ id: "player1".to_string() };
-    let wager_map: HashMap<Player, Vec<Wager>> = HashMap::from(
-        [
-            (player, vec![Wager{ wager_type: FullDeck, amount: 100}])
-        ]
-    );
-
-    let config = Fts::new(wager_map, "house".to_string());
+async fn create_game(State(state): State<Arc<Mutex<GameStorage>>>,
+                     Json(config) : Json<Fts>) -> String {
+    // let player = Player{ id: "player1".to_string() };
+    // let wager_map: HashMap<Player, Vec<Wager>> = HashMap::from(
+    //     [
+    //         (player, vec![Wager{ wager_type: FullDeck, amount: 100}])
+    //     ]
+    // );
+    //
+    // let config = Fts::new(wager_map, "house".to_string());
 
     let mut storage = state.lock().unwrap();
     storage.insert_game(Box::new(game::fts::Fts::init(config).unwrap()))
