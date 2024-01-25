@@ -17,7 +17,7 @@ pub enum WagerType {
 }
 
 #[derive(Deserialize)]
-pub(crate) struct Fts {
+pub struct Fts {
     pub wagers: HashMap<Player, Vec<Wager>>,
     pub house_id: String
 }

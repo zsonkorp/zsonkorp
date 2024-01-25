@@ -2,6 +2,8 @@ use thiserror::Error;
 use anyhow::Result;
 
 pub(crate) mod fts;
+pub use fts::Fts;
+
 #[derive(Error, Debug)]
 enum Error {
     #[error("Generic game error")]

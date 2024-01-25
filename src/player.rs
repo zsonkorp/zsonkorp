@@ -23,9 +23,7 @@ impl Eq for Player {
 
 }
 
-struct PlayerVisitor {
-
-}
+struct PlayerVisitor {}
 impl PlayerVisitor {
     pub fn new() -> Self {
         PlayerVisitor {}

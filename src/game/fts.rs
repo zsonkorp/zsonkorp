@@ -7,7 +7,7 @@ use crate::config::fts::{Fts as FtsConfig, WagerType};
 use anyhow::{anyhow, Result};
 use crate::game::{Game, GameType};
 
-pub(crate) struct Fts {
+pub struct Fts {
     deck: Deck,
     config: FtsConfig,
     state: State,
