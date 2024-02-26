@@ -1,10 +1,10 @@
 version: 0.0
 os: linux
 files:
-  - source: /target/release
-    destination: /home/ec2-user/app
+  - source: /
+    destination: /home/ec2-user/app/source
 hooks:
-  BeforeInstall:
+  AfterInstall:
     - location: aws/build.sh
       timeout: 300
       runas: ec2-user
