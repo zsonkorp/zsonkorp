@@ -7,7 +7,6 @@ hooks:
   AfterInstall:
     - location: aws/build.sh
       timeout: 300
-      runas: ec2-user
   ApplicationStart:
     - location: aws/start_app.sh
   ApplicationStop:

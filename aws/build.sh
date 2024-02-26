@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="/home/ec2-user/.cargo/bin:$PATH"
 
 cd /home/ec2-user/app/source
 cargo build --release
