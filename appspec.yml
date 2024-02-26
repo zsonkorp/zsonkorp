@@ -8,6 +8,6 @@ hooks:
     - location: aws/build.sh
       timeout: 300
   ApplicationStart:
-    - location: aws/start_app.sh
+    - location: aws/start-app.sh
   ApplicationStop:
-    - location: aws/stop_app.sh
+    - location: aws/stop-app.sh
