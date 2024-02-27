@@ -6,12 +6,15 @@ on:
 env:
   AWS_REGION: us-west-1
   S3BUCKET: arn:aws:s3:::zsonkorp-game-artifact
+  CARGO_TERM_COLOR: always
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v3
         name: Checkout Repository
