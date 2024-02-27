@@ -1,12 +1,11 @@
 version: 0.0
 os: linux
 files:
-  - source: /
-    destination: /home/ec2-user/app/source
+  - source: /aws
+    destination: /home/ec2-user/app/scripts
 hooks:
   AfterInstall:
-    - location: aws/build.sh
-      timeout: 300
+    - location: aws/after-install.sh
   ApplicationStart:
     - location: aws/start-app.sh
   ApplicationStop:

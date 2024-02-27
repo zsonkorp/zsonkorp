@@ -1,0 +1,49 @@
+name: deploy-aws
+
+on:
+  workflow_dispatch: {}
+
+env:
+  AWS_REGION: us-west-1
+  S3BUCKET: arn:aws:s3:::zsonkorp-game-artifact
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout Repository
+
+      - name: Get rust toolchain
+        run: rustup update stable && rustup default stable
+
+      - name: Build
+        run: cargo build --release --verbose
+
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.IAMROLE_GITHUB }}
+          role-session-name: GitHub-Action-Role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload Artifact to s3
+        working-directory: ./target/release/
+        run: aws s3 cp zsonkorp s3://${{ env.S3BUCKET }}/
+
+#  deploy:
+#    needs: build
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: aws-actions/configure-aws-credentials@v1
+#        with:
+#          role-to-assume: ${{ secrets.IAMROLE_GITHUB }}
+#          role-session-name: GitHub-Action-Role
+#          aws-region: ${{ env.AWS_REGION }}
+#      - run: |
+#          echo "Deploying branch ${{ env.GITHUB_REF }} to ${{ github.event.inputs.environment }}"
+#          commit_hash=`git rev-parse HEAD`
+#          aws deploy create-deployment --application-name zsonkorp-game --deployment-group-name default-deployment-group --github-location repository=$GITHUB_REPOSITORY,commitId=$commit_hash --ignore-application-stop-failures
