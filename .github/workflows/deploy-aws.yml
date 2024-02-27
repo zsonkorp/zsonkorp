@@ -5,7 +5,7 @@ on:
 
 env:
   AWS_REGION: us-west-1
-  S3BUCKET: arn:aws:s3:::zsonkorp-game-artifact
+  S3BUCKET: zsonkorp-game-artifact
   CARGO_TERM_COLOR: always
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
       - name: Build
         run: cargo build --release --verbose
 
-      - uses: aws-actions/configure-aws-credentials@v1
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.IAMROLE_GITHUB }}
           role-session-name: GitHub-Action-Role
