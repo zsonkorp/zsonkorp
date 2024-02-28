@@ -1,4 +1,3 @@
-use std::fs::canonicalize;
 use crate::card::{Card, RANK_COUNT, SUIT_COUNT};
 use rand::thread_rng;
 use rand::seq::SliceRandom;
@@ -44,6 +43,7 @@ impl Deck {
         }
     }
 
+    // Returns the newly split off deck: (index, len-1)
     //TODO: implement split interval: startIdx & endIdx
     pub fn split(&mut self, index: usize) -> Self {
         if self.cards.len() <= 1 {

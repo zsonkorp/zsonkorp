@@ -5,6 +5,8 @@ use axum::response::{IntoResponse, Response};
 use serde::Deserialize;
 
 pub(crate) mod fts;
+mod cta;
+
 pub use fts::Fts;
 use crate::{config, game};
 
@@ -20,7 +22,7 @@ pub(crate) enum Error {
 
 #[derive(Deserialize)]
 pub(crate) enum GameType {
-    Fts
+    Fts, Cta
 }
 
 pub trait Game: Sync + Send {
@@ -36,6 +38,7 @@ pub fn create_game(game_type: &GameType, payload: &str) -> Result<Box<dyn Game>>
                 Ok(config) => Ok(Box::new(Fts::init(config)?)),
                 Err(e) => Err(anyhow!(Error::ParseConfig(e.to_string())))
             }
-        }
+        },
+        _ => Err(anyhow!(Error::UnknownGame))
     }
 }
