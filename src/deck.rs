@@ -1,4 +1,4 @@
-use crate::card::{Card, RANK_COUNT, SUIT_COUNT};
+use crate::card::{Card, get_suit_count, get_rank_count};
 use rand::thread_rng;
 use rand::seq::SliceRandom;
 
@@ -27,12 +27,12 @@ impl Deck {
 
             _ => {
                 let mut cards = Vec::with_capacity(
-                    (count * RANK_COUNT as u32 * SUIT_COUNT as u32) as usize
+                    (count * get_rank_count() as u32 * get_suit_count() as u32) as usize
                 );
 
                 for _ in 0..count {
-                    for suit_ord in 0..SUIT_COUNT {
-                        for rank in 1..(RANK_COUNT + 1) {
+                    for suit_ord in 0..get_suit_count() {
+                        for rank in 1..(get_rank_count() + 1) {
                             cards.push(Card::new(rank, suit_ord.try_into().unwrap()).unwrap());
                         }
                     }

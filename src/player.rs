@@ -3,6 +3,7 @@ use std::hash::{Hash, Hasher};
 use serde::{Deserialize, Deserializer, Serialize};
 use serde::de::{Error, Visitor};
 
+#[derive(Debug)]
 pub struct Player {
     pub id: String
 }

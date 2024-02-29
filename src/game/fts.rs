@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use crate::deck::Deck;
 use crate::state::State;
-use crate::config::fts::{Fts as FtsConfig, WagerType};
+use crate::config::fts::{Fts as FtsConfig, FtsWagerType};
 use anyhow::{anyhow, Result};
 use crate::game::{Game, GameType};
 
@@ -15,7 +15,7 @@ pub struct Fts {
     flopped_at: Option<u8>
 }
 impl Fts {
-    pub fn init(config: FtsConfig) -> Result<Self> {
+    pub fn new(config: FtsConfig) -> Result<Self> {
         let mut fts = Fts {
             deck: Deck::default(),
             config,
@@ -38,12 +38,12 @@ impl Fts {
         let max_possible_flops = (self.deck.len() / 3) as u8;
 
         'outer:
-        for value in self.config.wagers.values() {
+        for value in self.config.get_base_config().get_wagers().values() {
             for wager in value.iter() {
-                self.max_flop_count = cmp::max(self.max_flop_count, match &wager.wager_type {
-                    WagerType::FullDeck => max_possible_flops,
-                    WagerType::AtFlop(ith) => *ith,
-                    WagerType::FlopRange(_, endInc) => *endInc
+                self.max_flop_count = cmp::max(self.max_flop_count, match wager.get_wager_type() {
+                    FtsWagerType::FullDeck => max_possible_flops,
+                    FtsWagerType::AtFlop(ith) => *ith,
+                    FtsWagerType::FlopRange(_, endInc) => *endInc
                 });
 
                 if self.max_flop_count == max_possible_flops {
@@ -61,8 +61,6 @@ impl Fts {
             return Err(anyhow!("Game already started"));
         }
 
-        self.config.validate()?;
-
         if self.max_flop_count == 0 {
             return Err(anyhow!("Game set to perform 0 flops"));
         }
@@ -79,24 +77,24 @@ impl Fts {
 
         let mut house_payout = 0;
 
-        for (player, wager_vec) in self.config.wagers.iter() {
+        for (player, wager_vec) in self.config.get_base_config().get_wagers().iter() {
 
             let mut player_payout = 0;
 
             for wager in wager_vec {
-                let payout = match &wager.wager_type {
+                let payout = match wager.get_wager_type() {
 
-                    WagerType::FullDeck => match &self.flopped_at {
+                    FtsWagerType::FullDeck => match &self.flopped_at {
                         None => -(wager.amount * 17),
                         Some(flopped_at) => wager.amount * i32::from(17 - flopped_at)
                     },
 
-                    WagerType::AtFlop(flop) => match &self.flopped_at {
+                    FtsWagerType::AtFlop(flop) => match &self.flopped_at {
                         None => -wager.amount,
                         Some(flopped_at) => if flopped_at == flop { wager.amount * 17 } else { -wager.amount }
                     },
 
-                    WagerType::FlopRange(flop_start, flop_end) => match &self.flopped_at {
+                    FtsWagerType::FlopRange(flop_start, flop_end) => match &self.flopped_at {
                         None => -( wager.amount * i32::from(flop_end - flop_start + 1) ),
                         Some(flopped_at) => if flopped_at <= flop_end && flopped_at >= flop_start {
                             wager.amount * i32::from(17 - (flopped_at - flop_start) )
@@ -116,7 +114,7 @@ impl Fts {
         }
 
         if house_payout != 0 {
-            map.insert(self.config.house_id.clone(), house_payout);
+            map.insert(self.config.get_base_config().get_house_id().to_string(), house_payout);
         }
 
         if map.is_empty() {
@@ -166,20 +164,18 @@ impl Game for Fts {
     }
 
     fn get_result(&self) -> String {
-        format!("Flopped at: {}\nCards: {:?}",
-                match &self.flopped_at {
-                    Some(f) => f,
-                    None => &0
-                },
-                self.deck.get_dealt_cards()
-        )
+
+        match &self.flopped_at {
+            Some(at) => format!("Flopped at: {}\nCards: {:?}", at, self.deck.get_dealt_cards()),
+            None =>  format!("No flop\nCards: {:?}", self.deck.get_dealt_cards())
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::config::fts::Wager;
-    use crate::config::fts::WagerType::FullDeck;
+    use crate::config::fts::FtsWagerType::FullDeck;
     use crate::player::Player;
     use super::*;
 
@@ -187,9 +183,9 @@ mod tests {
     fn flow() -> Result<()>{
 
         let player = Player{ id: "player1".to_string() };
-        let wager_map: HashMap<Player, Vec<Wager>> = HashMap::from(
+        let wager_map: HashMap<Player, Vec<Wager<FtsWagerType>>> = HashMap::from(
             [
-                (player, vec![Wager{ wager_type: FullDeck, amount: 100}])
+                (player, vec![Wager::new( 0, FullDeck, 100)?])
             ]
         );
 

@@ -35,7 +35,7 @@ pub fn create_game(game_type: &GameType, payload: &str) -> Result<Box<dyn Game>>
     match game_type {
         GameType::Fts => {
             match serde_json::from_str(payload) {
-                Ok(config) => Ok(Box::new(Fts::init(config)?)),
+                Ok(config) => Ok(Box::new(Fts::new(config)?)),
                 Err(e) => Err(anyhow!(Error::ParseConfig(e.to_string())))
             }
         },

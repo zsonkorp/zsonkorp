@@ -1,16 +1,12 @@
 use std::collections::HashMap;
 use crate::player::Player;
-use anyhow::{anyhow, Result};
-use serde::{Deserialize, Serialize};
+use anyhow::Result;
+use serde::Deserialize;
+use crate::config::Config;
+use crate::wager::Wager;
 
 #[derive(Deserialize)]
-pub struct Wager {
-    pub wager_type: WagerType,
-    pub amount: i32
-}
-
-#[derive(Deserialize)]
-pub enum WagerType {
+pub enum FtsWagerType {
     FullDeck,
     AtFlop(u8),
     FlopRange(u8, u8)
@@ -18,35 +14,17 @@ pub enum WagerType {
 
 #[derive(Deserialize)]
 pub struct Fts {
-    pub wagers: HashMap<Player, Vec<Wager>>,
-    pub house_id: String
+    base_config: Config<Wager<FtsWagerType>>
 }
 
 impl Fts {
-    pub fn new(wagers_map: HashMap<Player, Vec<Wager>>, house_id: String) -> Self {
-        Fts {
-            wagers: wagers_map,
-            house_id
-        }
+    pub fn new(wagers: HashMap<Player, Vec<Wager<FtsWagerType>>>, house_id: String) -> Result<Self> {
+        let base_config = Config::new(wagers, house_id)?;
+
+        Ok(Fts{ base_config })
     }
 
-    pub fn set_house(&mut self, house_id: String) {
-        self.house_id = house_id;
-    }
-
-    pub fn add_player(&mut self) -> Result<()> {
-        todo!()
-    }
-
-    pub fn remove_player(&mut self) -> Result<()> {
-        todo!()
-    }
-
-    pub fn validate(&self) -> Result<()> {
-        if self.wagers.is_empty() {
-            return Err(anyhow!("No wagers"));
-        }
-
-        Ok(())
+    pub fn get_base_config(&self) -> &Config<Wager<FtsWagerType>> {
+        &self.base_config
     }
 }

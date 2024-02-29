@@ -1,12 +1,32 @@
+use std::fmt;
+use std::fmt::{Debug, Formatter, write};
 use thiserror::Error;
 use crate::card;
 
-pub(crate) const RANK_COUNT: u8 = 13;
-pub(crate) const SUIT_COUNT: u8 = 4;
+const RANK_COUNT: u8 = 13;
+const SUIT_COUNT: u8 = 4;
 
-#[derive(PartialEq, Debug)]
+pub fn get_rank_count() -> u8 {
+    RANK_COUNT
+}
+
+pub fn get_suit_count() -> u8 {
+    SUIT_COUNT
+}
+
+#[derive(PartialEq)]
 pub(crate) struct Card {
     val: u8
+}
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Card {{ val: {}, rank: {}, suit: {} }}", self.val, self.get_rank(), self.get_suit())
+    }
+}
+impl fmt::Debug for Card {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self)
+    }
 }
 
 #[derive(PartialEq, Debug)]
@@ -15,6 +35,13 @@ pub enum Suit {
     Spades,
     Clubs,
     Diamonds
+}
+
+
+impl fmt::Display for Suit {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 #[derive(Error, Debug, PartialEq)]
