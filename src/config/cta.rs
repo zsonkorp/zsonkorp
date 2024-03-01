@@ -12,7 +12,7 @@ pub enum CtaWagerType {
 }
 
 pub struct Cta {
-    base_config: Config<Wager<CtaWagerType>>
+    base_config: Config<CtaWagerType>
 }
 
 impl Cta {
@@ -22,7 +22,7 @@ impl Cta {
         Ok(Cta{ base_config })
     }
 
-    pub fn get_base_config(&self) -> &Config<Wager<CtaWagerType>> {
+    pub fn get_base_config(&self) -> &Config<CtaWagerType> {
         &self.base_config
     }
 }

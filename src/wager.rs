@@ -24,4 +24,8 @@ impl<T> Wager<T> {
     pub fn get_wager_type(&self) -> &T {
         &self.wager_type
     }
+
+    pub fn get_id(&self) -> &u32 {
+        &self.id
+    }
 }

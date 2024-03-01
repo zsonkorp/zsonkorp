@@ -12,6 +12,7 @@ mod game_storage;
 mod handlers;
 mod app_state;
 mod wager;
+mod payout;
 
 #[tokio::main]
 async fn main() {
