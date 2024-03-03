@@ -42,10 +42,13 @@ pub struct Fts {
 }
 
 impl Fts {
-    pub fn new(wagers: HashMap<Player, Vec<Wager<FtsWagerType>>>, house_id: String) -> Result<Self> {
+    pub fn new(wagers: HashMap<Player, Vec<Wager<FtsWagerType>>>,
+               house_id: String,
+               opt_odds: Option<Odds>) -> Result<Self> {
+
         let base_config = Config::new(wagers, house_id)?;
 
-        Ok( Fts{ base_config, odds: Odds::default() })
+        Ok( Fts{ base_config, odds: opt_odds.unwrap_or(Odds::default()) })
     }
 
     pub fn get_base_config(&self) -> &Config<FtsWagerType> {

@@ -6,22 +6,25 @@ use crate::state::State;
 use crate::config::fts::{Fts as FtsConfig, FtsWagerType};
 use anyhow::{anyhow, Result};
 use crate::game::{Game, GameType};
+use crate::payout::Payout;
 
-pub struct Fts {
+pub struct Fts<'a> {
     deck: Deck,
     config: FtsConfig,
     state: State,
     max_flop_count: u8,
-    flopped_at: Option<u8>
+    flopped_at: Option<u8>,
+    payouts: Vec<Payout<'a>>
 }
-impl Fts {
+impl<'a> Fts<'a> {
     pub fn new(config: FtsConfig) -> Result<Self> {
         let mut fts = Fts {
             deck: Deck::default(),
             config,
             state: State::Setup,
             max_flop_count: 0,
-            flopped_at: None
+            flopped_at: None,
+            payouts: Vec::new()
         };
 
         fts.apply_config()?;
@@ -32,8 +35,7 @@ impl Fts {
     pub fn get_state(&self) -> &State {
         &self.state
     }
-
-    pub fn apply_config(&mut self) -> Result<()> {
+    fn apply_config(&mut self) -> Result<()> {
 
         let max_possible_flops = (self.deck.len() / 3) as u8;
 
@@ -54,8 +56,7 @@ impl Fts {
 
         Ok(())
     }
-
-    pub fn ready(&self) -> Result<()> {
+    fn ready(&self) -> Result<()> {
 
         if self.state != State::Setup {
             return Err(anyhow!("Game already started"));
@@ -68,21 +69,14 @@ impl Fts {
         Ok(())
     }
 
-    pub fn get_payout(&self) -> Option<HashMap<String, i32>> {
-        let mut map: HashMap<String, i32> = HashMap::new();
-
-        if self.state != State::Ended {
-            return None;
-        }
-
+    fn generate_payouts(&'a mut self) -> Result<()> {
         let mut house_payout = 0;
 
         for (player, wager_vec) in self.config.get_base_config().get_wagers().iter() {
 
-            let mut player_payout = 0;
-
             for wager in wager_vec {
-                let payout = match wager.get_wager_type() {
+
+                let amount = match wager.get_wager_type() {
 
                     FtsWagerType::FullDeck => match &self.flopped_at {
                         None => -(wager.amount * 17),
@@ -104,28 +98,27 @@ impl Fts {
                     }
                 };
 
-                player_payout += payout;
-                house_payout -= payout;
-            }
+                if amount != 0 {
+                    self.payouts.push(Payout::new(player.get_id(), Some(wager), amount)?);
+                }
 
-            if player_payout != 0 {
-                map.insert(player.id.clone(), player_payout);
+                house_payout -= amount;
             }
         }
 
         if house_payout != 0 {
-            map.insert(self.config.get_base_config().get_house_id().to_string(), house_payout);
+            self.payouts.push(
+                Payout::new::<FtsWagerType>(
+                    self.config.get_base_config().get_house_id(), None, house_payout
+                )?
+            );
         }
 
-        if map.is_empty() {
-            None
-        } else {
-            Some(map)
-        }
+        Ok(())
     }
 }
 
-impl Game for Fts {
+impl Game for Fts<'_> {
     fn my_type(&self) -> GameType {
         GameType::Fts
     }
@@ -163,12 +156,14 @@ impl Game for Fts {
         Ok(())
     }
 
-    fn get_result(&self) -> String {
+    fn get_payout(&self) -> &[Payout] {
 
-        match &self.flopped_at {
-            Some(at) => format!("Flopped at: {}\nCards: {:?}", at, self.deck.get_dealt_cards()),
-            None =>  format!("No flop\nCards: {:?}", self.deck.get_dealt_cards())
-        }
+        // match &self.flopped_at {
+        //     Some(at) => format!("Flopped at: {}\nCards: {:?}", at, self.deck.get_dealt_cards()),
+        //     None =>  format!("No flop\nCards: {:?}", self.deck.get_dealt_cards())
+        // }
+
+        return &self.payouts;
     }
 }
 
@@ -182,14 +177,14 @@ mod tests {
     #[test]
     fn flow() -> Result<()>{
 
-        let player = Player{ id: "player1".to_string() };
+        let player = Player::new("player1".to_string());
         let wager_map: HashMap<Player, Vec<Wager<FtsWagerType>>> = HashMap::from(
             [
                 (player, vec![Wager::new( 0, FullDeck, 100)?])
             ]
         );
 
-        let config = FtsConfig::new(wager_map, "house".to_string());
+        let config = FtsConfig::new(wager_map, "house".to_string(), None);
 
 
         let mut game = Fts::init(config)?;

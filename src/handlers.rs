@@ -1,11 +1,8 @@
-use std::collections::HashMap;
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
-use axum::Json;
 use axum::response::{IntoResponse, Response};
 use serde::Deserialize;
-use crate::config;
 use crate::game;
 use crate::app_state::AppState;
 
@@ -29,10 +26,10 @@ impl<E> From<E> for AnyhowError where E: Into<Error>{
 }
 
 pub(crate) async fn create_game(State(state): State<AppState>,
-                                Query(typeParam) : Query<GameTypeQuery>,
+                                Query(type_param) : Query<GameTypeQuery>,
                                 body: String) -> Result<String, AnyhowError> {
 
-    let game = game::create_game(&typeParam.kind, &body)?;
+    let game = game::create_game(&type_param.kind, &body)?;
     let mut storage = state.game_store.lock().unwrap();
     Ok(storage.insert_game(game))
 }
@@ -46,8 +43,11 @@ pub(crate) async fn start_game(Path(id): Path<String>,
 }
 
 pub(crate) async fn get_game_result(Path(id): Path<String>,
-                                    State(state): State<AppState>) -> String {
+                                    State(state): State<AppState>) -> Result<String, AnyhowError> {
     let mut storage = state.game_store.lock().unwrap();
     let game = storage.get_game(&id).unwrap();
-    game.get_result()
+    match serde_json::to_string(game.get_payout()) {
+        Ok(payout_json) => Ok(payout_json),
+        Err(e) => Err(AnyhowError::from(e))
+    }
 }

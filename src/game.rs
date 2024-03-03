@@ -1,14 +1,13 @@
 use thiserror::Error;
 use anyhow::{anyhow, Result};
-use axum::http::StatusCode;
-use axum::response::{IntoResponse, Response};
+use axum::response::IntoResponse;
 use serde::Deserialize;
 
 pub(crate) mod fts;
 mod cta;
 
 pub use fts::Fts;
-use crate::{config, game};
+use crate::payout::Payout;
 
 #[derive(Error, Debug)]
 pub(crate) enum Error {
@@ -28,7 +27,7 @@ pub(crate) enum GameType {
 pub trait Game: Sync + Send {
     fn my_type(&self) -> GameType;
     fn start(&mut self) -> Result<()>;
-    fn get_result(&self) -> String;
+    fn get_payout(&self) -> &[Payout];
 }
 
 pub fn create_game(game_type: &GameType, payload: &str) -> Result<Box<dyn Game>> {

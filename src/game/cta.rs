@@ -3,6 +3,7 @@ use crate::config::CtaWagerType;
 use crate::config;
 use crate::game::{Game, GameType};
 use anyhow::Result;
+use crate::payout::Payout;
 use crate::state::State;
 
 struct Cta {
@@ -50,7 +51,7 @@ impl Game for Cta {
         todo!()
     }
 
-    fn get_result(&self) -> String {
+    fn get_payout(&self) -> &[Payout] {
         todo!()
     }
 }

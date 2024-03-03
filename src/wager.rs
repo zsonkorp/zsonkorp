@@ -28,4 +28,8 @@ impl<T> Wager<T> {
     pub fn get_id(&self) -> &u32 {
         &self.id
     }
+
+    pub fn get_amount(&self) -> &i32 {
+        &self.amount
+    }
 }

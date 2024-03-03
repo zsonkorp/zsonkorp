@@ -1,5 +1,5 @@
 use std::fmt;
-use std::fmt::{Debug, Formatter, write};
+use std::fmt::{Debug, Formatter};
 use thiserror::Error;
 use crate::card;
 

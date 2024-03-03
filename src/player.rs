@@ -5,7 +5,17 @@ use serde::de::{Error, Visitor};
 
 #[derive(Debug)]
 pub struct Player {
-    pub id: String
+    id: String
+}
+
+impl Player {
+
+    pub fn new(id: String) -> Self {
+        Player{ id }
+    }
+    pub fn get_id(&self) -> &str {
+        &self.id
+    }
 }
 
 impl Hash for Player {

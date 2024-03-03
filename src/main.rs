@@ -7,7 +7,6 @@ mod game;
 mod config;
 mod state;
 mod player;
-mod result;
 mod game_storage;
 mod handlers;
 mod app_state;
