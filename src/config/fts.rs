@@ -7,15 +7,23 @@ use crate::wager::Wager;
 
 #[derive(Deserialize)]
 pub struct Odds {
+    full_deck: i32,
+    at_flop: i32,
+    flop_range: i32
+}
 
-    #[serde(rename = "FullDeck")]
-    full_deck: u8,
+impl Odds {
+    pub fn get_full_deck(&self) -> &i32 {
+        &self.full_deck
+    }
 
-    #[serde(rename = "AtFlop")]
-    at_flop: u8,
+    pub fn get_at_flop(&self) -> &i32 {
+        &self.at_flop
+    }
 
-    #[serde(rename = "FlopRange")]
-    flop_range: u8
+    pub fn get_flop_range(&self) -> &i32 {
+        &self.flop_range
+    }
 }
 
 impl Default for Odds {
@@ -31,8 +39,8 @@ impl Default for Odds {
 #[derive(Deserialize)]
 pub enum FtsWagerType {
     FullDeck,
-    AtFlop(u8),
-    FlopRange(u8, u8)
+    AtFlop(u8),             // This is 0 based
+    FlopRange(u8, u8)       // This is also 0 based, end is inclusive
 }
 
 #[derive(Deserialize)]
@@ -53,5 +61,9 @@ impl Fts {
 
     pub fn get_base_config(&self) -> &Config<FtsWagerType> {
         &self.base_config
+    }
+
+    pub fn get_odds(&self) -> &Odds {
+        &self.odds
     }
 }

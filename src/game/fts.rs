@@ -13,7 +13,7 @@ pub struct Fts<'a> {
     config: FtsConfig,
     state: State,
     max_flop_count: u8,
-    flopped_at: Option<u8>,
+    flopped_at: Option<u8>,     // This is the ith flop where the first flop is 0
     payouts: Vec<Payout<'a>>
 }
 impl<'a> Fts<'a> {
@@ -37,18 +37,16 @@ impl<'a> Fts<'a> {
     }
     fn apply_config(&mut self) -> Result<()> {
 
-        let max_possible_flops = (self.deck.len() / 3) as u8;
-
         'outer:
         for value in self.config.get_base_config().get_wagers().values() {
             for wager in value.iter() {
                 self.max_flop_count = cmp::max(self.max_flop_count, match wager.get_wager_type() {
-                    FtsWagerType::FullDeck => max_possible_flops,
+                    FtsWagerType::FullDeck => self.get_max_possible_flop_count(),
                     FtsWagerType::AtFlop(ith) => *ith,
                     FtsWagerType::FlopRange(_, endInc) => *endInc
                 });
 
-                if self.max_flop_count == max_possible_flops {
+                if self.max_flop_count == self.get_max_possible_flop_count() {
                     break 'outer
                 }
             }
@@ -79,21 +77,41 @@ impl<'a> Fts<'a> {
                 let amount = match wager.get_wager_type() {
 
                     FtsWagerType::FullDeck => match &self.flopped_at {
-                        None => -(wager.amount * 17),
-                        Some(flopped_at) => wager.amount * i32::from(17 - flopped_at)
+
+                        // No flop, player loses their wager times number of flops for the deck
+                        None => -(wager.amount * i32::from(self.get_max_possible_flop_count())),
+
+                        // Player wins full deck odds * wager - failed flops * wager or wager * (full deck odds - failed flops)
+                        Some(flopped_at) =>
+                            wager.amount * (self.config.get_odds().get_full_deck() - i32::from(*flopped_at))
                     },
 
                     FtsWagerType::AtFlop(flop) => match &self.flopped_at {
+                        // No flop, player loses the wager
                         None => -wager.amount,
-                        Some(flopped_at) => if flopped_at == flop { wager.amount * 17 } else { -wager.amount }
+
+                        // Player wins only if it's on the same flop, player only loses if it flopped after
+                        Some(flopped_at) =>
+                            if flopped_at == flop {
+                                wager.amount * self.config.get_odds().get_at_flop()
+                            } else if flopped_at > flop {
+                                -wager.amount
+                            } else {
+                                0
+                            }
                     },
 
                     FtsWagerType::FlopRange(flop_start, flop_end) => match &self.flopped_at {
+                        // No flop, player loses the wager * the length of the range
                         None => -( wager.amount * i32::from(flop_end - flop_start + 1) ),
+
+                        // Player wins if it's within range, loses if flopped happened after the range
                         Some(flopped_at) => if flopped_at <= flop_end && flopped_at >= flop_start {
-                            wager.amount * i32::from(17 - (flopped_at - flop_start) )
-                        } else {
+                            wager.amount * (self.config.get_odds().get_flop_range() - i32::from(flopped_at - flop_start) )
+                        } else if flopped_at > flop_end {
                             -( wager.amount * i32::from(flop_end - flop_start + 1) )
+                        } else {
+                            0
                         }
                     }
                 };
@@ -115,6 +133,10 @@ impl<'a> Fts<'a> {
         }
 
         Ok(())
+    }
+
+    fn get_max_possible_flop_count(&self) -> u8 {
+        (self.deck.len() / 3) as u8
     }
 }
 
@@ -169,7 +191,7 @@ impl Game for Fts<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::fts::Wager;
+    use crate::wager::Wager;
     use crate::config::fts::FtsWagerType::FullDeck;
     use crate::player::Player;
     use super::*;
@@ -184,18 +206,18 @@ mod tests {
             ]
         );
 
-        let config = FtsConfig::new(wager_map, "house".to_string(), None);
+        let config = FtsConfig::new(wager_map, "house".to_string(), None)?;
 
 
-        let mut game = Fts::init(config)?;
+        let mut game = Fts::new(config)?;
 
         game.start()?;
 
-        let payout = game.get_payout().unwrap();
+        let payout = game.get_payout();
 
         println!("Payout: {:?}", payout);
 
-        println!("Result: {}", game.get_result());
+        // println!("Result: {}", game.get_result());
         Ok(())
     }
 }
