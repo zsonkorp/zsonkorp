@@ -4,6 +4,8 @@ mod cta;
 use std::collections::HashMap;
 pub use cta::Cta;
 pub use cta::CtaWagerType;
+pub use fts::Fts;
+pub use fts::FtsWagerType;
 use crate::player::Player;
 use anyhow::{anyhow, Result};
 use serde::Deserialize;

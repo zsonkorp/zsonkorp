@@ -8,15 +8,15 @@ use anyhow::{anyhow, Result};
 use crate::game::{Game, GameType};
 use crate::payout::Payout;
 
-pub struct Fts<'a> {
+pub struct Fts {
     deck: Deck,
     config: FtsConfig,
     state: State,
     max_flop_count: u8,
     flopped_at: Option<u8>,     // This is the ith flop where the first flop is 0
-    payouts: Vec<Payout<'a>>
+    payouts: Vec<Payout>
 }
-impl<'a> Fts<'a> {
+impl Fts {
     pub fn new(config: FtsConfig) -> Result<Self> {
         let mut fts = Fts {
             deck: Deck::default(),
@@ -67,7 +67,7 @@ impl<'a> Fts<'a> {
         Ok(())
     }
 
-    fn generate_payouts(&'a mut self) -> Result<()> {
+    fn generate_payouts(&mut self) -> Result<()> {
         let mut house_payout = 0;
 
         for (player, wager_vec) in self.config.get_base_config().get_wagers().iter() {
@@ -140,7 +140,7 @@ impl<'a> Fts<'a> {
     }
 }
 
-impl Game for Fts<'_> {
+impl Game for Fts {
     fn my_type(&self) -> GameType {
         GameType::Fts
     }
@@ -174,7 +174,7 @@ impl Game for Fts<'_> {
 
         // fts does not need any internal state transitions yet, go straight to the end
         self.state = State::Ended;
-
+        self.generate_payouts()?;
         Ok(())
     }
 

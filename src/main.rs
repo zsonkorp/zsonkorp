@@ -12,6 +12,7 @@ mod handlers;
 mod app_state;
 mod wager;
 mod payout;
+mod dto;
 
 #[tokio::main]
 async fn main() {

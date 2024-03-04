@@ -49,15 +49,11 @@ impl Visitor<'_> for PlayerVisitor {
     }
 
     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E> where E: Error {
-        Ok(Player {
-            id: v.to_string()
-        })
+        Ok(Player::new(v.to_string()))
     }
 
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E> where E: Error {
-        Ok(Player {
-            id: v
-        })
+        Ok(Player::new(v))
     }
 }
 impl<'de> Deserialize<'de> for Player {

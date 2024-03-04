@@ -2,11 +2,14 @@ use thiserror::Error;
 use anyhow::{anyhow, Result};
 use axum::response::IntoResponse;
 use serde::Deserialize;
+use crate::config;
+use crate::config::FtsWagerType;
 
 pub(crate) mod fts;
 mod cta;
 
-pub use fts::Fts;
+use crate::dto::ConfigDto;
+use crate::game::fts::Fts;
 use crate::payout::Payout;
 
 #[derive(Error, Debug)]
@@ -33,11 +36,25 @@ pub trait Game: Sync + Send {
 pub fn create_game(game_type: &GameType, payload: &str) -> Result<Box<dyn Game>> {
     match game_type {
         GameType::Fts => {
-            match serde_json::from_str(payload) {
-                Ok(config) => Ok(Box::new(Fts::new(config)?)),
-                Err(e) => Err(anyhow!(Error::ParseConfig(e.to_string())))
+
+            match serde_json::from_str::<ConfigDto<FtsWagerType>>(payload) {
+                Ok(config_dto) => {
+
+                    if config_dto.wager_map.is_empty() {
+                        return Err(Error::ParseConfig("Empty wager map".to_string()).into());
+                    }
+
+                    let fts_config = config::Fts::new(
+                        config_dto.wager_map,
+                        config_dto.house_id.
+                            ok_or(anyhow!(Error::ParseConfig("This is an edged game, house id must exist".to_string())))?,
+                        None
+                    )?;
+                    Ok(Box::new(Fts::new(fts_config)?))
+                },
+                Err(e) => Err(Error::ParseConfig(e.to_string()).into())
             }
         },
-        _ => Err(anyhow!(Error::UnknownGame))
+        _ => Err(Error::UnknownGame.into())
     }
 }

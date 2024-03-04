@@ -12,14 +12,14 @@ enum Error {
 }
 
 #[derive(Debug, Serialize)]
-pub struct Payout<'a> {
-    player_id: &'a str,
+pub struct Payout{
+    player_id: String,
     wager_id: Option<u32>,
     amount: i32     //positive -> player wins, negative -> player loses
 }
 
-impl<'a> Payout<'a> {
-    pub fn new<T>(player_id: &'a str, opt_wager: Option<&Wager<T>>, amount: i32) -> Result<Self> {
+impl Payout {
+    pub fn new<T>(player_id: &str, opt_wager: Option<&Wager<T>>, amount: i32) -> Result<Self> {
 
         if amount == 0 {
             return Err(anyhow!(Error::ZeroAmount));
@@ -29,12 +29,12 @@ impl<'a> Payout<'a> {
             if amount < 0 && amount < *wager.get_amount() {
                 return Err(anyhow!(Error::LossExceedsWagerAmount(player_id.to_string(), amount, *wager.get_amount())))
             } else {
-                return Ok( Payout{ player_id, wager_id: Some(*wager.get_id()), amount } );
+                return Ok( Payout{ player_id: player_id.to_string(), wager_id: Some(*wager.get_id()), amount } );
             }
         }
 
         // No wager? This happens when we are creating payout for the house
         // Maybe separate into another function to skip Option<wager> check
-        Ok(Payout { player_id, wager_id: None, amount })
+        Ok(Payout { player_id: player_id.to_string(), wager_id: None, amount })
     }
 }

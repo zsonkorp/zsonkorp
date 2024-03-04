@@ -5,7 +5,6 @@ use serde::Deserialize;
 use crate::config::Config;
 use crate::wager::Wager;
 
-#[derive(Deserialize)]
 pub struct Odds {
     full_deck: i32,
     at_flop: i32,
@@ -40,10 +39,9 @@ impl Default for Odds {
 pub enum FtsWagerType {
     FullDeck,
     AtFlop(u8),             // This is 0 based
-    FlopRange(u8, u8)       // This is also 0 based, end is inclusive
+    FlopRange(u8, u8)       // This is also 0 based, inclusive
 }
 
-#[derive(Deserialize)]
 pub struct Fts {
     base_config: Config<FtsWagerType>,
     odds: Odds
