@@ -30,7 +30,7 @@ pub(crate) enum GameType {
 pub trait Game: Sync + Send {
     fn my_type(&self) -> GameType;
     fn start(&mut self) -> Result<()>;
-    fn get_payout(&self) -> &[Payout];
+    fn get_payout(&self) -> Result<Vec<Payout>>;
 }
 
 pub fn create_game(game_type: &GameType, payload: &str) -> Result<Box<dyn Game>> {

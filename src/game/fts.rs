@@ -13,8 +13,7 @@ pub struct Fts {
     config: FtsConfig,
     state: State,
     max_flop_count: u8,
-    flopped_at: Option<u8>,     // This is the ith flop where the first flop is 0
-    payouts: Vec<Payout>
+    flopped_at: Option<u8>     // This is the ith flop where the first flop is 0
 }
 impl Fts {
     pub fn new(config: FtsConfig) -> Result<Self> {
@@ -23,8 +22,7 @@ impl Fts {
             config,
             state: State::Setup,
             max_flop_count: 0,
-            flopped_at: None,
-            payouts: Vec::new()
+            flopped_at: None
         };
 
         fts.apply_config()?;
@@ -67,7 +65,57 @@ impl Fts {
         Ok(())
     }
 
-    fn generate_payouts(&mut self) -> Result<()> {
+    fn get_max_possible_flop_count(&self) -> u8 {
+        (self.deck.len() / 3) as u8
+    }
+}
+
+impl Game for Fts {
+    fn my_type(&self) -> GameType {
+        GameType::Fts
+    }
+
+    fn start(&mut self) -> Result<()> {
+        self.ready()?;
+
+        self.state = State::Started;
+        self.deck.shuffle();
+
+        match self.deck.deal_multi((self.max_flop_count * 3).into()) {
+            None => return Err(anyhow!("Could not deal the required amount of cards")),
+            Some(cards) => {
+                let result = cards
+                    .chunks(3)
+                    .enumerate()
+                    .filter_map(|(i, chunk)| {
+                        if chunk[0].get_suit() == chunk[1].get_suit() && chunk[1].get_suit() == chunk[2].get_suit() {
+                            Some(i)
+                        } else {
+                            None
+                        }
+                    })
+                    .next();
+
+                if let Some(flopped_at) = result {
+                    self.flopped_at = Some(flopped_at as u8);
+                }
+            }
+        }
+
+        // fts does not need any internal state transitions yet, go straight to the end
+        self.state = State::Ended;
+        Ok(())
+    }
+
+    fn get_payout(&self) -> Result<Vec<Payout>> {
+
+        // match &self.flopped_at {
+        //     Some(at) => format!("Flopped at: {}\nCards: {:?}", at, self.deck.get_dealt_cards()),
+        //     None =>  format!("No flop\nCards: {:?}", self.deck.get_dealt_cards())
+        // }
+
+        let mut payouts: Vec<Payout> = Vec::new();
+
         let mut house_payout = 0;
 
         for (player, wager_vec) in self.config.get_base_config().get_wagers().iter() {
@@ -117,7 +165,7 @@ impl Fts {
                 };
 
                 if amount != 0 {
-                    self.payouts.push(Payout::new(player.get_id(), Some(wager), amount)?);
+                    payouts.push(Payout::new(player.get_id(), Some(wager), amount)?);
                 }
 
                 house_payout -= amount;
@@ -125,67 +173,14 @@ impl Fts {
         }
 
         if house_payout != 0 {
-            self.payouts.push(
+            payouts.push(
                 Payout::new::<FtsWagerType>(
                     self.config.get_base_config().get_house_id(), None, house_payout
                 )?
             );
         }
 
-        Ok(())
-    }
-
-    fn get_max_possible_flop_count(&self) -> u8 {
-        (self.deck.len() / 3) as u8
-    }
-}
-
-impl Game for Fts {
-    fn my_type(&self) -> GameType {
-        GameType::Fts
-    }
-
-    fn start(&mut self) -> Result<()> {
-        self.ready()?;
-
-        self.state = State::Started;
-        self.deck.shuffle();
-
-        match self.deck.deal_multi((self.max_flop_count * 3).into()) {
-            None => return Err(anyhow!("Could not deal the required amount of cards")),
-            Some(cards) => {
-                let result = cards
-                    .chunks(3)
-                    .enumerate()
-                    .filter_map(|(i, chunk)| {
-                        if chunk[0].get_suit() == chunk[1].get_suit() && chunk[1].get_suit() == chunk[2].get_suit() {
-                            Some(i)
-                        } else {
-                            None
-                        }
-                    })
-                    .next();
-
-                if let Some(flopped_at) = result {
-                    self.flopped_at = Some(flopped_at as u8);
-                }
-            }
-        }
-
-        // fts does not need any internal state transitions yet, go straight to the end
-        self.state = State::Ended;
-        self.generate_payouts()?;
-        Ok(())
-    }
-
-    fn get_payout(&self) -> &[Payout] {
-
-        // match &self.flopped_at {
-        //     Some(at) => format!("Flopped at: {}\nCards: {:?}", at, self.deck.get_dealt_cards()),
-        //     None =>  format!("No flop\nCards: {:?}", self.deck.get_dealt_cards())
-        // }
-
-        return &self.payouts;
+        Ok(payouts)
     }
 }
 

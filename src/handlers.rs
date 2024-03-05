@@ -46,7 +46,7 @@ pub(crate) async fn get_game_result(Path(id): Path<String>,
                                     State(state): State<AppState>) -> Result<String, AnyhowError> {
     let mut storage = state.game_store.lock().unwrap();
     let game = storage.get_game(&id).unwrap();
-    match serde_json::to_string(game.get_payout()) {
+    match serde_json::to_string(&game.get_payout()?) {
         Ok(payout_json) => Ok(payout_json),
         Err(e) => Err(AnyhowError::from(e))
     }

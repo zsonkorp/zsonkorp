@@ -51,7 +51,7 @@ impl Game for Cta {
         todo!()
     }
 
-    fn get_payout(&self) -> &[Payout] {
+    fn get_payout(&self) -> Result<Vec<Payout>> {
         todo!()
     }
 }
