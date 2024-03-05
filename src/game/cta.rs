@@ -4,13 +4,13 @@ use crate::config;
 use crate::game::{Game, GameType};
 use anyhow::Result;
 use crate::payout::Payout;
-use crate::state::State;
+use crate::state::{CtaState, GlobalState};
 
 struct Cta {
     deck_pool: Vec<Deck>,
     config: config::Cta,
     enforce_optimal_cut: bool,
-    state: State
+    state: GlobalState<CtaState>
 }
 
 impl Cta {
@@ -18,7 +18,7 @@ impl Cta {
         let mut game = Cta {
             deck_pool: vec![Deck::default()],
             config,
-            state: State::Setup,
+            state: GlobalState::Setup,
             enforce_optimal_cut: false
         };
 
@@ -47,7 +47,7 @@ impl Game for Cta {
         GameType::Cta
     }
 
-    fn start(&mut self) -> Result<()> {
+    fn advance_state(&mut self) -> Result<()> {
         todo!()
     }
 

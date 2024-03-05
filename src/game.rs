@@ -29,7 +29,7 @@ pub(crate) enum GameType {
 
 pub trait Game: Sync + Send {
     fn my_type(&self) -> GameType;
-    fn start(&mut self) -> Result<()>;
+    fn advance_state(&mut self) -> Result<()>;
     fn get_payout(&self) -> Result<Vec<Payout>>;
 }
 

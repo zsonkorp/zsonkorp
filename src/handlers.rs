@@ -38,7 +38,7 @@ pub(crate) async fn start_game(Path(id): Path<String>,
                                State(state): State<AppState>) {
     let mut storage = state.game_store.lock().unwrap();
     let game = storage.get_game(&id).unwrap();
-    game.start().unwrap();
+    game.advance_state().unwrap();
 
 }
 

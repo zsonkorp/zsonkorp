@@ -2,16 +2,17 @@ use std::cmp;
 use std::collections::HashMap;
 use std::hash::Hash;
 use crate::deck::Deck;
-use crate::state::State;
+use crate::state::GlobalState;
 use crate::config::fts::{Fts as FtsConfig, FtsWagerType};
 use anyhow::{anyhow, Result};
 use crate::game::{Game, GameType};
 use crate::payout::Payout;
+use crate::state::GlobalState::Ended;
 
 pub struct Fts {
     deck: Deck,
     config: FtsConfig,
-    state: State,
+    state: GlobalState<()>,
     max_flop_count: u8,
     flopped_at: Option<u8>     // This is the ith flop where the first flop is 0
 }
@@ -20,7 +21,7 @@ impl Fts {
         let mut fts = Fts {
             deck: Deck::default(),
             config,
-            state: State::Setup,
+            state: GlobalState::Setup,
             max_flop_count: 0,
             flopped_at: None
         };
@@ -30,9 +31,6 @@ impl Fts {
         Ok(fts)
     }
 
-    pub fn get_state(&self) -> &State {
-        &self.state
-    }
     fn apply_config(&mut self) -> Result<()> {
 
         'outer:
@@ -54,7 +52,7 @@ impl Fts {
     }
     fn ready(&self) -> Result<()> {
 
-        if self.state != State::Setup {
+        if self.state != GlobalState::Setup {
             return Err(anyhow!("Game already started"));
         }
 
@@ -75,10 +73,10 @@ impl Game for Fts {
         GameType::Fts
     }
 
-    fn start(&mut self) -> Result<()> {
+    fn advance_state(&mut self) -> Result<()> {
         self.ready()?;
 
-        self.state = State::Started;
+        self.state = GlobalState::Started(());
         self.deck.shuffle();
 
         match self.deck.deal_multi((self.max_flop_count * 3).into()) {
@@ -103,7 +101,7 @@ impl Game for Fts {
         }
 
         // fts does not need any internal state transitions yet, go straight to the end
-        self.state = State::Ended;
+        self.state = GlobalState::Ended;
         Ok(())
     }
 
@@ -115,6 +113,10 @@ impl Game for Fts {
         // }
 
         let mut payouts: Vec<Payout> = Vec::new();
+
+        if self.state != Ended {
+            return Ok(payouts);
+        }
 
         let mut house_payout = 0;
 
@@ -206,7 +208,7 @@ mod tests {
 
         let mut game = Fts::new(config)?;
 
-        game.start()?;
+        game.advance_state()?;
 
         let payout = game.get_payout();
 
