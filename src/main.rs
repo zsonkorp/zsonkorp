@@ -13,6 +13,7 @@ mod app_state;
 mod wager;
 mod payout;
 mod dto;
+mod transition;
 
 #[tokio::main]
 async fn main() {
@@ -23,7 +24,7 @@ async fn main() {
         .route("/", get(app_ascii_art))
         .route("/game", post(handlers::create_game))
         .route(
-            "/game/:game_id", get(handlers::get_game_result).post(handlers::start_game)
+            "/game/:game_id", get(handlers::get_payout).post(handlers::transition_game)
         )
         .with_state(app_state);
 

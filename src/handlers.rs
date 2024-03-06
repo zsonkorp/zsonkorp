@@ -34,16 +34,17 @@ pub(crate) async fn create_game(State(state): State<AppState>,
     Ok(storage.insert_game(game))
 }
 
-pub(crate) async fn start_game(Path(id): Path<String>,
-                               State(state): State<AppState>) {
+pub(crate) async fn transition_game(Path(id): Path<String>,
+                                    State(state): State<AppState>,
+                                    body: String) {
     let mut storage = state.game_store.lock().unwrap();
     let game = storage.get_game(&id).unwrap();
-    game.advance_state().unwrap();
+    // game.transition().unwrap();
 
 }
 
-pub(crate) async fn get_game_result(Path(id): Path<String>,
-                                    State(state): State<AppState>) -> Result<String, AnyhowError> {
+pub(crate) async fn get_payout(Path(id): Path<String>,
+                               State(state): State<AppState>) -> Result<String, AnyhowError> {
     let mut storage = state.game_store.lock().unwrap();
     let game = storage.get_game(&id).unwrap();
     match serde_json::to_string(&game.get_payout()?) {

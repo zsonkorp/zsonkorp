@@ -2,17 +2,18 @@ use std::cmp;
 use std::collections::HashMap;
 use std::hash::Hash;
 use crate::deck::Deck;
-use crate::state::GlobalState;
+use crate::state::GameState;
 use crate::config::fts::{Fts as FtsConfig, FtsWagerType};
 use anyhow::{anyhow, Result};
 use crate::game::{Game, GameType};
+use crate::handlers::transition_game;
 use crate::payout::Payout;
-use crate::state::GlobalState::Ended;
+use crate::transition::{Transition, GameTransition};
 
 pub struct Fts {
     deck: Deck,
     config: FtsConfig,
-    state: GlobalState<()>,
+    state: GameState<()>,
     max_flop_count: u8,
     flopped_at: Option<u8>     // This is the ith flop where the first flop is 0
 }
@@ -21,7 +22,7 @@ impl Fts {
         let mut fts = Fts {
             deck: Deck::default(),
             config,
-            state: GlobalState::Setup,
+            state: GameState::Setup,
             max_flop_count: 0,
             flopped_at: None
         };
@@ -52,7 +53,7 @@ impl Fts {
     }
     fn ready(&self) -> Result<()> {
 
-        if self.state != GlobalState::Setup {
+        if self.state != GameState::Setup {
             return Err(anyhow!("Game already started"));
         }
 
@@ -73,10 +74,15 @@ impl Game for Fts {
         GameType::Fts
     }
 
-    fn advance_state(&mut self) -> Result<()> {
+    fn transition(&mut self, transition: Box<dyn Transition>) -> Result<()> {
+
+        // if self.state != GameState::Setup || transition != GameTransition::StartGame {
+        //     return Err(anyhow!("Invalid state transition"));
+        // }
+
         self.ready()?;
 
-        self.state = GlobalState::Started(());
+        self.state = GameState::Started(());
         self.deck.shuffle();
 
         match self.deck.deal_multi((self.max_flop_count * 3).into()) {
@@ -101,8 +107,20 @@ impl Game for Fts {
         }
 
         // fts does not need any internal state transitions yet, go straight to the end
-        self.state = GlobalState::Ended;
+        self.state = GameState::Ended;
         Ok(())
+    }
+
+    fn get_valid_transitions(&self) -> Vec<Box<dyn Transition>> {
+
+        let mut transitions: Vec<Box<dyn Transition>> = Vec::new();
+
+        match self.state {
+            GameState::Setup => transitions.push(Box::new(GameTransition::<()>::StartGame)),
+            _ => {}
+        }
+
+        transitions
     }
 
     fn get_payout(&self) -> Result<Vec<Payout>> {
@@ -114,7 +132,7 @@ impl Game for Fts {
 
         let mut payouts: Vec<Payout> = Vec::new();
 
-        if self.state != Ended {
+        if self.state != GameState::Ended {
             return Ok(payouts);
         }
 
@@ -208,7 +226,7 @@ mod tests {
 
         let mut game = Fts::new(config)?;
 
-        game.advance_state()?;
+        game.transition(Box::new(GameTransition::StartGame))?;
 
         let payout = game.get_payout();
 

@@ -11,6 +11,7 @@ mod cta;
 use crate::dto::ConfigDto;
 use crate::game::fts::Fts;
 use crate::payout::Payout;
+use crate::transition::Transition;
 
 #[derive(Error, Debug)]
 pub(crate) enum Error {
@@ -29,7 +30,8 @@ pub(crate) enum GameType {
 
 pub trait Game: Sync + Send {
     fn my_type(&self) -> GameType;
-    fn advance_state(&mut self) -> Result<()>;
+    fn transition(&mut self, transition: Box<dyn Transition>) -> Result<()>;
+    fn get_valid_transitions(&self) -> Vec<Box<dyn Transition>>;
     fn get_payout(&self) -> Result<Vec<Payout>>;
 }
 
