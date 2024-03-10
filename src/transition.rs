@@ -1,17 +1,16 @@
 mod cta;
 
+use serde::{Deserialize, Serialize};
 pub use cta::CtaTransition;
-pub enum GameTransition<T> {
-    StartGame,
-    EndGame,
-    AdvanceGame(T)
+
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum GameTransition {
+    Start,
+    End
 }
 
-impl Transition for GameTransition<()> {
-
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum Transition {
+    Game(GameTransition),
+    Cta(CtaTransition)
 }
-
-pub trait Transition {
-
-}
-

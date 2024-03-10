@@ -4,14 +4,15 @@ use crate::config;
 use crate::game::{Game, GameType};
 use anyhow::Result;
 use crate::payout::Payout;
-use crate::state::{CtaState, GameState};
-use crate::transition::{CtaTransition, GameTransition, Transition};
+use crate::state::State;
+use crate::state::GameState::*;
+use crate::transition::Transition;
 
 struct Cta {
     deck_pool: Vec<Deck>,
     config: config::Cta,
     enforce_optimal_cut: bool,
-    state: GameState<CtaState>
+    state: State
 }
 
 impl Cta {
@@ -19,7 +20,7 @@ impl Cta {
         let mut game = Cta {
             deck_pool: vec![Deck::default()],
             config,
-            state: GameState::Setup,
+            state: State::Game(Setup),
             enforce_optimal_cut: false
         };
 
@@ -44,15 +45,15 @@ impl Cta {
 }
 
 impl Game for Cta {
-    fn my_type(&self) -> GameType {
+    fn get_type(&self) -> GameType {
         GameType::Cta
     }
 
-    fn transition(&mut self, transition: Box<dyn Transition>) -> Result<()> {
+    fn transition(&mut self, transition: Transition) -> Result<()> {
         todo!()
     }
 
-    fn get_valid_transitions(&self) -> Vec<Box<dyn Transition>> {
+    fn get_valid_transitions(&self) -> Vec<Transition> {
         todo!()
     }
 

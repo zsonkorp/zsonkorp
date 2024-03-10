@@ -23,8 +23,10 @@ async fn main() {
     let app = Router::new()
         .route("/", get(app_ascii_art))
         .route("/game", post(handlers::create_game))
+        .route("/game/:id/payout", get(handlers::get_payout))
         .route(
-            "/game/:game_id", get(handlers::get_payout).post(handlers::transition_game)
+            "/game/:id/transitions",
+            get(handlers::get_transitions).post(handlers::transition_game)
         )
         .with_state(app_state);
 

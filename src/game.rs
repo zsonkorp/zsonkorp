@@ -20,18 +20,22 @@ pub(crate) enum Error {
     #[error("Error parsing game configuration: {0}")]
     ParseConfig(String),
     #[error("Unknown game type")]
-    UnknownGame
+    UnknownGame,
+    #[error("Invalid transition")]
+    InvalidTransition,
+    #[error("Game not found: {0}")]
+    NotFound(String)
 }
 
 #[derive(Deserialize)]
-pub(crate) enum GameType {
+pub enum GameType {
     Fts, Cta
 }
 
 pub trait Game: Sync + Send {
-    fn my_type(&self) -> GameType;
-    fn transition(&mut self, transition: Box<dyn Transition>) -> Result<()>;
-    fn get_valid_transitions(&self) -> Vec<Box<dyn Transition>>;
+    fn get_type(&self) -> GameType;
+    fn transition(&mut self, transition: Transition) -> Result<()>;
+    fn get_valid_transitions(&self) -> Vec<Transition>;
     fn get_payout(&self) -> Result<Vec<Payout>>;
 }
 

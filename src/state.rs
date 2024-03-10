@@ -3,16 +3,15 @@ mod cta;
 pub use cta::CtaState;
 
 #[derive(Debug, Eq, PartialEq)]
-pub enum GameState<T> {
+pub enum GameState {
     Setup,
-    Started(T), //T is intermediary states games may have once they have started
-    Ended,
+    Started,
+    Ended
 }
 
-impl State for GameState<()> {
 
-}
-
-pub trait State {
-
+#[derive(Debug, Eq, PartialEq)]
+pub enum State {
+    Game(GameState),
+    Cta(CtaState)
 }

@@ -1,13 +1,4 @@
-use crate::state::{GameState, State};
-
+#[derive(Debug, Eq, PartialEq)]
 pub enum CtaState {
     AwaitCut
-}
-
-impl State for CtaState {
-
-}
-
-impl State for GameState<CtaState> {
-
 }

@@ -1,14 +1,10 @@
+use serde::{Deserialize, Serialize};
 use crate::transition::{GameTransition, Transition};
 
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum CtaTransition {
-    Cut(u8, u8),
-    Quit
-}
-
-impl Transition for GameTransition<CtaTransition> {
-
-}
-
-impl Transition for CtaTransition {
-
+    Cut {
+        deck_index: u8,
+        position: u8
+    }
 }
