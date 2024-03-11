@@ -97,6 +97,14 @@ impl Deck {
     pub fn len(&self) -> usize {
         self.cards.len()
     }
+
+    pub fn get_bottom(&self) -> &Card {
+        &self.cards[self.cards.len() - 1]
+    }
+
+    pub fn get_top(&self) -> &Card {
+        &self.cards[0]
+    }
 }
 
 #[cfg(test)]

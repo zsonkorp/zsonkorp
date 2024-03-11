@@ -23,7 +23,7 @@ impl fmt::Display for Card {
         write!(f, "Card {{ val: {}, rank: {}, suit: {} }}", self.val, self.get_rank(), self.get_suit())
     }
 }
-impl fmt::Debug for Card {
+impl Debug for Card {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self)
     }

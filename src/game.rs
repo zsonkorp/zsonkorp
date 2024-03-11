@@ -3,12 +3,13 @@ use anyhow::{anyhow, Result};
 use axum::response::IntoResponse;
 use serde::Deserialize;
 use crate::config;
-use crate::config::FtsWagerType;
+use crate::config::{CtaWagerType, FtsWagerType};
 
 pub(crate) mod fts;
 mod cta;
 
 use crate::dto::ConfigDto;
+use crate::game::cta::Cta;
 use crate::game::fts::Fts;
 use crate::payout::Payout;
 use crate::transition::Transition;
@@ -61,6 +62,25 @@ pub fn create_game(game_type: &GameType, payload: &str) -> Result<Box<dyn Game>>
                 Err(e) => Err(Error::ParseConfig(e.to_string()).into())
             }
         },
+
+        GameType::Cta => {
+            match serde_json::from_str::<ConfigDto<CtaWagerType>>(payload) {
+                Ok(config_dto) => {
+
+                    if config_dto.wager_map.is_empty() {
+                        return Err(Error::ParseConfig("Empty wager map".to_string()).into());
+                    }
+
+                    let cta_config = config::Cta::new(
+                        config_dto.wager_map,
+                        config_dto.house_id.
+                            ok_or(anyhow!(Error::ParseConfig("This is an edged game, house id must exist".to_string())))?
+                    )?;
+                    Ok(Box::new(Cta::new(cta_config)?))
+                },
+                Err(e) => Err(Error::ParseConfig(e.to_string()).into())
+            }
+        }
         _ => Err(Error::UnknownGame.into())
     }
 }

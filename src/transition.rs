@@ -1,4 +1,4 @@
-mod cta;
+pub mod cta;
 
 use serde::{Deserialize, Serialize};
 pub use cta::CtaTransition;
