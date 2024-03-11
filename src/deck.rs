@@ -94,8 +94,12 @@ impl Deck {
         &self.cards[0..self.next_idx]
     }
 
-    pub fn len(&self) -> usize {
+    pub fn total_len(&self) -> usize {
         self.cards.len()
+    }
+
+    pub fn remain_len(&self) -> usize {
+        self.cards.len() - self.next_idx
     }
 
     pub fn get_bottom(&self) -> &Card {

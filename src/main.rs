@@ -14,6 +14,7 @@ mod wager;
 mod payout;
 mod dto;
 mod transition;
+mod serializers;
 
 #[tokio::main]
 async fn main() {

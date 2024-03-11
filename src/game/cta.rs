@@ -1,8 +1,8 @@
 use crate::deck::Deck;
 use crate::config::{CtaWagerType, FtsWagerType};
-use crate::{config, transition};
+use crate::config;
 use crate::game::{Game, GameType};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use crate::game::Error::InvalidTransition;
 use crate::payout::Payout;
 use crate::state::State;
@@ -88,7 +88,7 @@ impl Cta {
 
         if *deck_index >= self.deck_pool.len() ||
             // cutting above the top card or below the bottom card is always invalid as it does not create an additional deck, thus not a cut
-            *position == 0 || *position >= self.deck_pool[*deck_index].deck.len() {
+            *position == 0 || *position >= self.deck_pool[*deck_index].deck.total_len() {
             return Err(InvalidCut(*deck_index, *position).into());
         }
 
@@ -98,13 +98,13 @@ impl Cta {
         if self.enforce_optimal_cut {
             if *position == 1 && (*deck_index != 0 || self.orig_top_revealed) {
                 return Err(UnoptimalCut(*position).into());
-            } else if *position == self.deck_pool[*deck_index].deck.len() - 1 && (*deck_index == self.bottom_deck_index || self.orig_bottom_revealed) {
+            } else if *position == self.deck_pool[*deck_index].deck.total_len() - 1 && (*deck_index == self.bottom_deck_index || self.orig_bottom_revealed) {
                 return Err(UnoptimalCut(*position).into());
             }
         }
 
         // perform cut and update bookkeeping structures
-        let old_deck_len = self.deck_pool[*deck_index].deck.len();
+        let old_deck_len = self.deck_pool[*deck_index].deck.total_len();
         let new_deck = self.deck_pool[*deck_index].deck.split(*position);
         self.deck_pool.push(
             DeckHelper::new(

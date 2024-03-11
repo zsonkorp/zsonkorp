@@ -1,5 +1,7 @@
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+use serde::{Serialize, Serializer};
+use serde::ser::SerializeStruct;
 use thiserror::Error;
 use crate::card;
 
@@ -14,10 +16,40 @@ pub fn get_suit_count() -> u8 {
     SUIT_COUNT
 }
 
+#[derive(Error, Debug, PartialEq)]
+pub enum Error {
+    #[error("Invalid suit ordinal value: {0}")]
+    SuitOrdinal(u8),
+    #[error("Invalid rank value: {0}")]
+    InvalidRank(u8)
+}
+
 #[derive(PartialEq)]
 pub(crate) struct Card {
     val: u8
 }
+
+impl Card {
+    pub fn new(rank: u8, suit: Suit) -> Result<Card, card::Error> {
+
+        if rank == 0 || rank > RANK_COUNT {
+            return Err(Error::InvalidRank(rank));
+        }
+
+        Ok(Card {
+            val: u8::from(suit) * RANK_COUNT + (rank - 1)
+        })
+    }
+
+    pub fn get_rank(&self) -> u8 {
+        self.val % RANK_COUNT + 1
+    }
+
+    pub fn get_suit(&self) -> Suit {
+        Suit::try_from(self.val / RANK_COUNT).unwrap()
+    }
+}
+
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "Card {{ val: {}, rank: {}, suit: {} }}", self.val, self.get_rank(), self.get_suit())
@@ -29,7 +61,7 @@ impl Debug for Card {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Serialize)]
 pub enum Suit {
     Hearts,
     Spades,
@@ -44,13 +76,7 @@ impl fmt::Display for Suit {
     }
 }
 
-#[derive(Error, Debug, PartialEq)]
-pub enum Error {
-    #[error("Invalid suit ordinal value: {0}")]
-    SuitOrdinal(u8),
-    #[error("Invalid rank value: {0}")]
-    InvalidRank(u8)
-}
+
 
 impl TryFrom<u8> for Suit {
     type Error = card::Error;
@@ -76,24 +102,13 @@ impl From<Suit> for u8 {
     }
 }
 
-impl Card {
-    pub fn new(rank: u8, suit: Suit) -> Result<Card, card::Error> {
-
-        if rank == 0 || rank > RANK_COUNT {
-            return Err(Error::InvalidRank(rank));
-        }
-
-        Ok(Card {
-            val: u8::from(suit) * RANK_COUNT + (rank - 1)
-        })
-    }
-
-    pub fn get_rank(&self) -> u8 {
-        self.val % RANK_COUNT + 1
-    }
-
-    pub fn get_suit(&self) -> Suit {
-        Suit::try_from(self.val / RANK_COUNT).unwrap()
+impl Serialize for Card {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+        let mut serializer = serializer.serialize_struct("Card", 3)?;
+        serializer.serialize_field("val", &self.val)?;
+        serializer.serialize_field("rank", &self.get_rank())?;
+        serializer.serialize_field("suit", &self.get_suit())?;
+        serializer.end()
     }
 }
 

@@ -62,7 +62,7 @@ impl Fts {
     }
 
     fn get_max_possible_flop_count(&self) -> u8 {
-        (self.deck.len() / 3) as u8
+        (self.deck.total_len() / 3) as u8
     }
 
     fn transition_state(&mut self, transition: Transition) -> Result<State>{
