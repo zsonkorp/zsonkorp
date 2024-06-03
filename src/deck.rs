@@ -43,7 +43,7 @@ impl Deck {
         }
     }
 
-    // Returns the newly split off deck: (index, len-1)
+    // Returns the newly split off deck: [index + 1, len)
     //TODO: implement split interval: startIdx & endIdx
     pub fn split(&mut self, index: usize) -> Self {
         if self.cards.len() <= 1 {
@@ -57,7 +57,7 @@ impl Deck {
         }
 
         Deck {
-            cards: self.cards.split_off(index+ 1),
+            cards: self.cards.split_off(index + 1),
             next_idx: 0
         }
     }

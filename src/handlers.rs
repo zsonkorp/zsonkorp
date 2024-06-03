@@ -30,23 +30,34 @@ impl<E> From<E> for AnyhowError where E: Into<Error>{
 }
 
 pub async fn create_game(State(state): State<AppState>,
-                                Query(type_param) : Query<GameTypeQuery>,
-                                body: String) -> Result<String, AnyhowError> {
+                         Query(type_param) : Query<GameTypeQuery>,
+                         body: String) -> Result<String, AnyhowError> {
 
     let game = game::create_game(&type_param.kind, &body)?;
     let mut storage = state.game_store.lock().unwrap();
     Ok(storage.insert_game(game))
 }
 
+pub async fn retrieve_game(Path(id): Path<String>,
+                           State(state): State<AppState>) -> Result<String, AnyhowError> {
+    let mut storage = state.game_store.lock().unwrap();
+    let game = storage.get_game(&id).ok_or(NotFound(id))?;
+
+    Ok(serde_json::to_string(game)?)
+}
+
 pub async fn transition_game(Path(id): Path<String>,
-                                    State(state): State<AppState>,
-                                    body: String)  -> Result<(), AnyhowError>{
+                             State(state): State<AppState>,
+                             body: String)  -> Result<String, AnyhowError> {
+
     let mut storage = state.game_store.lock().unwrap();
     let game = storage.get_game(&id).ok_or(NotFound(id))?;
     match game.get_type() {
-        Fts => Ok(game.transition(serde_json::from_str(&body)?)?),
-        Cta => Ok(game.transition(serde_json::from_str(&body)?)?)
+        Fts => game.transition(serde_json::from_str(&body)?)?,
+        Cta => game.transition(serde_json::from_str(&body)?)?
     }
+
+    Ok(serde_json::to_string(game)?)
 }
 
 pub async fn get_transitions(Path(id): Path<String>,
@@ -57,7 +68,7 @@ pub async fn get_transitions(Path(id): Path<String>,
 }
 
 pub async fn get_payout(Path(id): Path<String>,
-                               State(state): State<AppState>) -> Result<String, AnyhowError> {
+                        State(state): State<AppState>) -> Result<String, AnyhowError> {
     let mut storage = state.game_store.lock().unwrap();
     let game = storage.get_game(&id).ok_or(NotFound(id))?;
     match serde_json::to_string(&game.get_payout()?) {

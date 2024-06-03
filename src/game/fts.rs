@@ -5,6 +5,7 @@ use crate::deck::Deck;
 use crate::state::State;
 use crate::config::fts::{Fts as FtsConfig, FtsWagerType};
 use anyhow::{anyhow, Result};
+use serde::{Serialize, Serializer};
 use crate::game::{Game, GameType};
 use crate::game::Error::InvalidTransition;
 use crate::payout::Payout;
@@ -113,6 +114,13 @@ impl Fts {
     }
 }
 
+impl Serialize for Fts {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> where S: Serializer {
+        todo!()
+    }
+}
+
+#[typetag::serialize]
 impl Game for Fts {
     fn get_type(&self) -> GameType {
         GameType::Fts

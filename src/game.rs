@@ -1,7 +1,7 @@
 use thiserror::Error;
 use anyhow::{anyhow, Result};
 use axum::response::IntoResponse;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use crate::config;
 use crate::config::{CtaWagerType, FtsWagerType};
 
@@ -33,6 +33,7 @@ pub enum GameType {
     Fts, Cta
 }
 
+#[typetag::serialize]
 pub trait Game: Sync + Send {
     fn get_type(&self) -> GameType;
     fn transition(&mut self, transition: Transition) -> Result<()>;

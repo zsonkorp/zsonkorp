@@ -1,8 +1,10 @@
+use std::ops::Deref;
 use crate::deck::Deck;
 use crate::config::{CtaWagerType, FtsWagerType};
 use crate::config;
 use crate::game::{Game, GameType};
 use anyhow::Result;
+use serde::Serialize;
 use crate::game::Error::InvalidTransition;
 use crate::payout::Payout;
 use crate::state::State;
@@ -14,26 +16,29 @@ use crate::transition::cta::Error::{InvalidCut, UnoptimalCut};
 use crate::transition::CtaTransition::*;
 use crate::transition::Transition;
 
-struct DeckHelper {
+struct DeckInfo {
     deck: Deck,
-    from_index: usize
+    top_reveal: bool,
+    bottom_reveal: bool
 }
 
-impl DeckHelper {
-    pub fn new(deck: Deck, from_index: usize) -> Self {
-        DeckHelper { deck, from_index }
+impl DeckInfo {
+
+    pub fn new(deck: Deck) -> Self {
+        DeckInfo {deck, top_reveal: false, bottom_reveal: false}
+    }
+    pub fn new_with_info(deck: Deck, top_reveal: bool, bottom_reveal: bool) -> Self {
+        DeckInfo { deck, top_reveal, bottom_reveal }
     }
 }
 
 pub struct Cta {
     config: config::Cta,
     state: State,
-    deck_pool: Vec<DeckHelper>,
+    deck_pool: Vec<DeckInfo>,
     bottom_deck_index: usize,
     enforce_optimal_cut: bool,
-    cut_pair: bool,
-    orig_top_revealed: bool,
-    orig_bottom_revealed: bool
+    cut_pair: bool
 }
 
 impl Cta {
@@ -41,12 +46,10 @@ impl Cta {
         let mut game = Cta {
             config,
             state: State::Game(Setup),
-            deck_pool: vec![DeckHelper::new(Deck::default(), 0)],
+            deck_pool: vec![DeckInfo::new(Deck::default())],
             bottom_deck_index: 0,
             enforce_optimal_cut: false,
-            cut_pair: false,
-            orig_bottom_revealed: false,
-            orig_top_revealed: false
+            cut_pair: false
         };
 
         game.apply_config()?;
@@ -84,50 +87,31 @@ impl Cta {
         }
     }
 
-    fn make_cut(&mut self, deck_index: &usize, position: &usize) -> Result<()> {
+    // card_index denotes the cut is made behind the card indexed by this value
+    // ex. if a deck is [2D, 6C], a card_index of 0 means splitting the deck into [2D] and [6C]
+    fn make_cut(&mut self, deck_index: usize, card_index: usize) -> Result<()> {
 
-        if *deck_index >= self.deck_pool.len() ||
-            // cutting above the top card or below the bottom card is always invalid as it does not create an additional deck, thus not a cut
-            *position == 0 || *position >= self.deck_pool[*deck_index].deck.total_len() {
-            return Err(InvalidCut(*deck_index, *position).into());
+        if !self.can_cut_deck(deck_index) || !self.can_cut_at(deck_index, card_index) {
+            return Err(InvalidCut(deck_index, card_index).into());
         }
 
-        // an optimal cut is a cut which reveals two more previously unseen cards
-        // cutting the second card is optimal only if the top card has never been revealed ie. top card of the original deck
-        // cutting the bottom card is optimal only if the bottom card has never been revealed ie. bottom card of the original deck
-        if self.enforce_optimal_cut {
-            if *position == 1 && (*deck_index != 0 || self.orig_top_revealed) {
-                return Err(UnoptimalCut(*position).into());
-            } else if *position == self.deck_pool[*deck_index].deck.total_len() - 1 && (*deck_index == self.bottom_deck_index || self.orig_bottom_revealed) {
-                return Err(UnoptimalCut(*position).into());
-            }
-        }
+        // perform the cut
 
-        // perform cut and update bookkeeping structures
-        let old_deck_len = self.deck_pool[*deck_index].deck.total_len();
-        let new_deck = self.deck_pool[*deck_index].deck.split(*position);
+        let new_deck = self.deck_pool[deck_index].deck.split(card_index);
+
         self.deck_pool.push(
-            DeckHelper::new(
-                new_deck,
-                *deck_index
-            )
+            DeckInfo::new_with_info(new_deck, true, self.deck_pool[deck_index].bottom_reveal)
         );
 
-        if self.bottom_deck_index == *deck_index {
+        self.deck_pool[deck_index].bottom_reveal = true;
+
+        if self.bottom_deck_index == deck_index {
             self.bottom_deck_index = self.deck_pool.len() - 1;
-        }
-
-        if *position == 1 {
-            self.orig_top_revealed = true;
-        }
-
-        if *position == old_deck_len - 1 {
-            self.orig_bottom_revealed = true;
         }
 
         // check win condition
         let new_deck = &self.deck_pool[self.deck_pool.len() - 1].deck;
-        let old_deck = &self.deck_pool[*deck_index].deck;
+        let old_deck = &self.deck_pool[deck_index].deck;
 
         if old_deck.get_bottom().get_rank() == 1 || new_deck.get_top().get_rank() == 1 {
             if  old_deck.get_bottom().get_rank() == new_deck.get_top().get_rank() {
@@ -138,10 +122,67 @@ impl Cta {
             self.state = Game(Ended);
         }
 
+        // fix up the decks if optimal cut is enforced
+        if self.enforce_optimal_cut {
+            todo!()
+        }
+
         Ok(())
+    }
+
+    fn can_cut_deck(&self, deck_index: usize) -> bool {
+
+        // cannot cut a deck that does not exist
+        if deck_index >= self.deck_pool.len() {
+            return false;
+        }
+
+        if self.enforce_optimal_cut {
+
+            // Cutting a deck with 2 cards or below is not optimal
+            if self.deck_pool[deck_index].deck.total_len() <= 2 {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    // an optimal cut is a cut which reveals two previously unseen cards
+    fn can_cut_at(&self, deck_index: usize, card_index: usize) -> bool {
+
+        let deck = &self.deck_pool[deck_index];
+        if self.enforce_optimal_cut {
+
+            if card_index >= deck.deck.total_len() - 1 {
+                // Cannot cut after the last card
+                return false;
+            }
+
+            if deck.top_reveal && card_index == 0 {
+                return false;
+            }
+
+            if deck.bottom_reveal && card_index == deck.deck.total_len() - 2 {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    fn fix_deck() {
+        todo!()
     }
 }
 
+impl Serialize for Cta {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> where S: serde::Serializer {
+        todo!()
+    }
+}
+
+#[typetag::serialize]
 impl Game for Cta {
     fn get_type(&self) -> GameType {
         GameType::Cta
@@ -157,7 +198,7 @@ impl Game for Cta {
                 self.end_game()?;
                 self.state = Game(Ended);
             },
-            Transition::Cta(Cut {deck_index, position}) => self.make_cut(deck_index, position)?,
+            Transition::Cta(Cut {deck_index, position}) => self.make_cut(*deck_index, *position)?,
             _ => return Err(InvalidTransition.into())
         }
 
